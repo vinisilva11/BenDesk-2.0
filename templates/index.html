@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="text-center">
+    <!--<h1>Bem-vindo ao BenDesk, {{ user.first_name }} {{ user.last_name }}!</h1>-->
+    <div class="text-center">
+        <img src="{{ url_for('static', filename='Logo_BenDesk.png') }}" alt="BenDesk Logo" style="height: 130px; margin-bottom: -20px;">
+        <h1>Bem-vindo ao BenDesk, {{ current_user.first_name }} {{ current_user.last_name }}!</h1>
+    </div>
+    <p>Programa na versão BETA 1.0.</p>    
+    <p>Painel completo para gerenciar chamados, ativos, impressoras, pagamentos e muito mais.</p>
+
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Chamados</h5>
+                    <p class="card-text">Gerencie todos os chamados de TI.</p>
+                    <a href="{{ url_for('tickets') }}" class="btn btn-primary">Ver Chamados</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Ativos</h5>
+                    <p class="card-text">Controle de ativos próprios e locados.</p>
+                    <a href="#" class="btn btn-primary">Ver Ativos</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Financeiro</h5>
+                    <p class="card-text">Pagamentos de fornecedores e contratos.</p>
+                    <a href="#" class="btn btn-primary">Ver Financeiro</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-md-4">
+            <div class="card text-white bg-danger mb-3">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Chamados Abertos</h5>
+                    <p class="card-text display-4">{{ open_count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-warning mb-3">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Chamados em Andamento</h5>
+                    <p class="card-text display-4">{{ in_progress_count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Chamados Encerrados</h5>
+                    <p class="card-text display-4">{{ closed_count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-info mb-3">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Tempo Médio de Resolução</h5>
+                    <h1>{{ avg_resolution }}</h1>
+                </div>
+            </div>
+        </div>
+    </div>    
+</div>
+{% endblock %}

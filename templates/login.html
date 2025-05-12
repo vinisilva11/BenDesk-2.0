@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <div class="text-center mb-4">
+            <img src="{{ url_for('static', filename='Logo_BenDesk.png') }}" alt="BenDesk Logo" class="login-logo">
+        </div>        
+        <h2>Login</h2>
+        <form method="POST">
+            <div class="mb-3">
+                <label>Usuário</label>
+                <input type="text" name="username" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label>Senha</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Entrar</button>
+        </form>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert alert-danger mt-3">{{ messages[0] }}</div>
+            {% endif %}
+        {% endwith %}
+    </div>
+</div>
+{% endblock %}

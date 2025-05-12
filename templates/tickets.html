@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Chamados</h2>
+
+<!-- TABELA com DataTables + Estilo ajustado para alinhar corretamente -->
+<table id="ticketsTable" class="table table-striped table-bordered align-middle text-center">
+    <thead class="table-light">
+        <tr>
+            <th class="text-start">ID</th>
+            <th class="text-start">Título</th>
+            <th class="text-center">Status</th>
+            <th class="text-center">Prioridade</th>
+            <th class="text-start">Solicitante</th>
+            <th class="text-start">Responsável</th>
+            <th class="text-center">Criado em</th>
+            <th class="text-center">SLA</th>
+            <th class="text-center">Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ticket in tickets %}
+        <tr>
+            <!-- ✅ ID -->
+            <td class="text-start">{{ ticket.id }}</td>
+
+            <!-- ✅ Título -->
+            <td class="text-start">{{ ticket.title }}</td>
+
+            <!-- ✅ Status com badge -->
+            <td class="text-center">
+                {% if ticket.status == 'Cancelado' %}
+                    <span class="badge bg-secondary">{{ ticket.status }}</span>
+                {% elif ticket.status == 'Aberto' %}
+                    <span class="badge bg-danger">{{ ticket.status }}</span>
+                {% elif ticket.status == 'Em Andamento' %}
+                    <span class="badge bg-warning text-dark">{{ ticket.status }}</span>
+                {% elif ticket.status == 'Encerrado' %}
+                    <span class="badge bg-success">{{ ticket.status }}</span>
+                {% else %}
+                    {{ ticket.status }}
+                {% endif %}
+            </td>
+
+            <!-- ✅ Prioridade -->
+            <td class="text-center">{{ ticket.priority }}</td>
+
+            <!-- 👤 Solicitante com avatar + e-mail -->
+            <td class="text-start">
+                <div class="d-flex align-items-center gap-2">
+                    {% if ticket.requester_avatar %}
+                        <img src="{{ url_for('static', filename='avatars/' ~ ticket.requester_avatar) }}" alt="Avatar" class="rounded-circle" width="32" height="32">
+                    {% else %}
+                        <span class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center" style="width:32px; height:32px;">
+                            <i class="bi bi-person-fill"></i>
+                        </span>
+                    {% endif %}
+                    <span class="small">{{ ticket.requester_email }}</span>
+                </div>
+            </td>
+
+            <!-- 👤 Responsável com avatar + nome -->
+            <td class="text-start">
+                {% if ticket.assigned_to %}
+                    <div class="d-flex align-items-center gap-2">
+                        {% if ticket.assigned_to_avatar %}
+                            <img src="{{ url_for('static', filename='avatars/' ~ ticket.assigned_to_avatar) }}" alt="Avatar" class="rounded-circle" width="32" height="32">
+                        {% else %}
+                            <span class="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center" style="width:32px; height:32px;">
+                                {{ ticket.assigned_to[0:1] | upper }}
+                            </span>
+                        {% endif %}
+                        <span class="small">{{ ticket.assigned_to }}</span>
+                    </div>
+                {% else %}
+                    <span class="text-muted small">Não atribuído</span>
+                {% endif %}
+            </td>
+
+            <!-- 📅 Criado em -->
+            <td class="text-center">
+                {{ (ticket.created_at + timedelta(hours=-3)).strftime('%d/%m/%Y %H:%M') }}
+            </td>
+
+            <!-- ⏱️ SLA -->
+            <td class="text-center">
+                {% if ticket.status == 'Encerrado' %}
+                    {% set diff = ticket.updated_at - ticket.created_at %}
+                    {% set total_seconds = diff.total_seconds() %}
+                    {% set hours = (total_seconds // 3600) | int %}
+                    {% set minutes = ((total_seconds % 3600) // 60) | int %}
+                    Resolvido em {{ diff.days }}d {{ hours % 24 }}h {{ minutes }}min
+                {% else %}
+                    {% set now = namespace(value=loop.current_time or none) %}
+                    {% set now.value = now.value or datetime.utcnow() %}
+                    {% set diff = (now.value - ticket.created_at).total_seconds() %}
+                    {% set diff_hours = (diff // 3600) | int %}
+                    {% set diff_minutes = ((diff % 3600) // 60) | int %}
+                    Em aberto há {{ (diff // 86400) | int }}d {{ diff_hours % 24 }}h {{ diff_minutes }}min
+                {% endif %}
+            </td>
+
+            <!-- 🔎 Ações -->
+            <td class="text-center">
+                <a href="{{ url_for('view_ticket', ticket_id=ticket.id) }}" class="btn btn-outline-secondary btn-sm" title="Ver detalhes">
+                    <i class="bi bi-eye"></i>
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
+{% block scripts %}
+<!-- jQuery + DataTables -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+<script>
+    $(document).ready(function () {
+        $('#ticketsTable').DataTable({
+            "order": [[0, "asc"]],
+            "stateSave": true,  // ✅ Salva preferências da tabela
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json"
+            }
+        });
+    });
+</script>
+{% endblock %}

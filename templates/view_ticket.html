@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Detalhes do Ticket #{{ ticket.id }}</h2>
+
+<p><strong>Título:</strong> {{ ticket.title }}</p>
+<p><strong>Descrição:</strong></p>
+<div class="description-box mt-2">
+    {{ ticket.description | safe }}
+</div>
+<p><strong>Solicitante:</strong> {{ ticket.requester_name }} ({{ ticket.requester_email }})</p>
+<p><strong>Responsável:</strong> {{ ticket.assigned_to if ticket.assigned_to else 'Não atribuído' }}</p>
+<p><strong>Criado em:</strong> {{ ticket.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+
+<hr>
+
+<!-- 🔧 FORM PRINCIPAL -->
+<h4>Atualizar Ticket</h4>
+<form method="POST">
+    <div class="form-group">
+        <label for="status">Status</label>
+        <select name="status" class="form-control" required>
+            <option value="Aberto" {% if ticket.status == 'Aberto' %}selected{% endif %}>Aberto</option>
+            <option value="Em Andamento" {% if ticket.status == 'Em Andamento' %}selected{% endif %}>Em Andamento</option>
+            <option value="Encerrado" {% if ticket.status == 'Encerrado' %}selected{% endif %}>Encerrado</option>
+            <option value="Cancelado" {% if ticket.status == 'Cancelado' %}selected{% endif %}>Cancelado</option>
+        </select>
+    </div>
+
+    <div class="form-group mt-2">
+        <label for="priority">Prioridade</label>
+        <select name="priority" class="form-control" required>
+            <option value="Muito Baixa" {% if ticket.priority == 'Muito Baixa' %}selected{% endif %}>Muito Baixa</option>
+            <option value="Baixa" {% if ticket.priority == 'Baixa' %}selected{% endif %}>Baixa</option>
+            <option value="Média" {% if ticket.priority == 'Média' %}selected{% endif %}>Média</option>
+            <option value="Alta" {% if ticket.priority == 'Alta' %}selected{% endif %}>Alta</option>
+            <option value="Muito Alta" {% if ticket.priority == 'Muito Alta' %}selected{% endif %}>Muito Alta</option>
+        </select>
+    </div>
+
+    <div class="form-group mt-2">
+        <label for="assigned_to">Responsável</label>
+        <select name="assigned_to" class="form-control">
+            <option value="">Não atribuído</option>
+            {% for user in users %}
+                <option value="{{ user.username }}" {% if ticket.assigned_to == user.username %}selected{% endif %}>
+                    {{ user.first_name }} {{ user.last_name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-group mt-4">
+        <label for="comment">Comentário</label>
+        <textarea name="comment" class="form-control" placeholder="Adicione um comentário (opcional)"></textarea>
+    </div>
+
+    <div class="d-flex justify-content-between mt-4">
+        <a href="{{ url_for('tickets') }}" class="btn btn-secondary">Voltar</a>
+        <button type="submit" class="btn btn-success">Salvar Alterações</button>
+    </div>
+</form>
+
+<hr>
+
+<!-- 💾 FORM SEPARADO para ANEXOS -->
+<h4>Anexar Arquivo</h4>
+<form method="POST" enctype="multipart/form-data">
+    <div class="form-group">
+        <input type="file" name="file" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-warning mt-2">Anexar Arquivo</button>
+</form>
+
+<hr>
+
+<!-- 💬 Comentários -->
+<h4>Comentários</h4>
+<ul class="list-group mt-3">
+    {% for comment in comments %}
+    <li class="list-group-item">
+        <strong>{{ comment.commenter }}</strong> ({{ comment.commented_at.strftime('%d/%m/%Y %H:%M') }}):<br>
+        {{ comment.comment }}
+    </li>
+    {% else %}
+    <li class="list-group-item">Nenhum comentário ainda.</li>
+    {% endfor %}
+</ul>
+
+<hr>
+
+<!-- 📎 Anexos -->
+<h4>Anexos</h4>
+<ul class="list-group mt-3">
+    {% for attachment in attachments %}
+    <li class="list-group-item">
+        <a href="{{ url_for('download_file', filename=attachment.filename) }}" target="_blank">{{ attachment.filename }}</a>
+        ({{ attachment.uploaded_at.strftime('%d/%m/%Y %H:%M') }})
+    </li>
+    {% else %}
+    <li class="list-group-item">Nenhum anexo ainda.</li>
+    {% endfor %}
+</ul>
+
+<hr>
+
+<!-- 🕒 Histórico -->
+<h4>Histórico de Alterações</h4>
+<ul class="list-group mt-3">
+    {% for item in history %}
+    <li class="list-group-item">
+        <strong>{{ item.changed_by }}</strong> em {{ item.changed_at.strftime('%d/%m/%Y %H:%M') }}:<br>
+        {{ item.change_description }}
+    </li>
+    {% else %}
+    <li class="list-group-item">Nenhum histórico de alterações ainda.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

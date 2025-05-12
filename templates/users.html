@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Gerenciamento de Usuários</h2>
+
+<a href="{{ url_for('new_user') }}" class="btn btn-success mb-3">Adicionar Novo Usuário</a>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Login</th>
+            <th>Email</th>
+            <th>Perfil</th>
+            <th>Status</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.first_name }} {{ user.last_name }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.profile }}</td>
+            <td>{{ 'Ativo' if user.is_active else 'Inativo' }}</td>
+            <td>
+                <!-- Botão para abrir o modal -->
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editModal{{ user.id }}">Editar</button>
+
+                {% if user.is_active %}
+                <a href="{{ url_for('toggle_user_status', user_id=user.id) }}" class="btn btn-sm btn-warning">Desativar</a>
+                {% else %}
+                <a href="{{ url_for('toggle_user_status', user_id=user.id) }}" class="btn btn-sm btn-success">Ativar</a>
+                {% endif %}
+                <a href="{{ url_for('delete_user', user_id=user.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir este usuário?');">Excluir</a>
+            </td>
+        </tr>
+
+    <!-- Modal -->
+<div class="modal fade" id="editModal{{ user.id }}" tabindex="-1" aria-labelledby="editModalLabel{{ user.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('edit_user', user_id=user.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel{{ user.id }}">Editar Usuário #{{ user.id }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Primeiro Nome</label>
+                        <input type="text" name="first_name" class="form-control" value="{{ user.first_name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Sobrenome</label>
+                        <input type="text" name="last_name" class="form-control" value="{{ user.last_name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Email</label>
+                        <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Senha <small>(deixe em branco se não quiser alterar)</small></label>
+                        <input type="password" name="password" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>Perfil</label>
+                        <select name="profile" class="form-control" required>
+                            <option value="Administrador" {% if user.profile == 'Administrador' %}selected{% endif %}>Administrador</option>
+                            <option value="Suporte" {% if user.profile == 'Suporte' %}selected{% endif %}>Suporte</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

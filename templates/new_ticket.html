@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Criar Novo Ticket</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="title" class="form-label">Título</label>
+            <input type="text" class="form-control" name="title" required>
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Descrição</label>
+            <textarea class="form-control" name="description" rows="5" required></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="priority" class="form-label">Prioridade</label>
+            <select class="form-select" name="priority">
+                <option value="Muito Alta">Muito Alta</option>
+                <option value="Alta">Alta</option>
+                <option value="Média" selected>Média</option>
+                <option value="Baixa">Baixa</option>
+                <option value="Muito Baixa">Muito Baixa</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="requester_name" class="form-label">Nome do Solicitante</label>
+            <input type="text" class="form-control" name="requester_name" required>
+        </div>
+        <div class="mb-3">
+            <label for="requester_email" class="form-label">E-mail do Solicitante</label>
+            <input type="email" class="form-control" name="requester_email" required>
+        </div>
+        <div class="mb-3">
+            <label for="file" class="form-label">Anexo (opcional)</label>
+            <input type="file" class="form-control" name="file">
+        </div>
+        <button type="submit" class="btn btn-primary">Criar Ticket</button>
+    </form>
+</div>
+{% endblock %}
