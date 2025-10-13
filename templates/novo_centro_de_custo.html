@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Novo Centro de Custo</h2>
+<form method="POST">
+  <div class="row mb-3">
+    <div class="col">
+      <label>Código</label>
+      <input type="text" name="code" class="form-control" required>
+    </div>
+    <div class="col">
+      <label>Nome</label>
+      <input type="text" name="name" class="form-control" required>
+    </div>
+  </div>
+  <button type="submit" class="btn btn-success">Salvar</button>
+  <a href="{{ url_for('centros_de_custo') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

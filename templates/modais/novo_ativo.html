@@ -1,0 +1,131 @@
+<!-- Modal Novo Ativo -->
+<div class="modal fade" id="novoAtivoModal" tabindex="-1" aria-labelledby="novoAtivoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content bg-dark text-light border-0 rounded-4 shadow-lg">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title fw-bold" id="novoAtivoModalLabel">🆕 Cadastrar Novo Ativo</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+
+      <form action="{{ url_for('novo_ativo') }}" method="POST">
+        <div class="modal-body">
+          <div class="row g-3">
+
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Tipo de Ativo</label>
+              <select class="form-select bg-black text-light border-secondary" name="type_id" required>
+                <option value="">Selecione...</option>
+                {% for tipo in tipos %}
+                  <option value="{{ tipo.id }}">{{ tipo.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Marca</label>
+              <input type="text" name="brand" class="form-control bg-black text-light border-secondary" placeholder="Ex: Dell, HP..." required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Modelo</label>
+              <input type="text" name="model" class="form-control bg-black text-light border-secondary" placeholder="Ex: Latitude 5400" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Número de Série</label>
+              <input type="text" name="serial_number" class="form-control bg-black text-light border-secondary" placeholder="Ex: SN123456" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Hostname</label>
+              <input type="text" name="hostname" class="form-control bg-black text-light border-secondary" placeholder="Ex: TI-PC-01">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Nota Fiscal</label>
+              <input type="text" name="invoice_number" class="form-control bg-black text-light border-secondary" placeholder="Ex: NF-0001234">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Código de Patrimônio</label>
+              <input type="text" name="patrimony_code" class="form-control bg-black text-light border-secondary" placeholder="Ex: PAT-001">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Centro de Custo</label>
+              <select class="form-select bg-black text-light border-secondary" name="cost_center_id">
+                <option value="">Selecione...</option>
+                {% for centro in centros %}
+                  <option value="{{ centro.id }}">{{ centro.code }} - {{ centro.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Usuário do Dispositivo</label>
+              <select class="form-select bg-black text-light border-secondary" name="device_user_id">
+                <option value="">Selecione...</option>
+                {% for usuario in usuarios %}
+                  <option value="{{ usuario.id }}">{{ usuario.first_name }} {{ usuario.last_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Status</label>
+              <select class="form-select bg-black text-light border-secondary" name="status">
+                <option value="Disponível">Disponível</option>
+                <option value="Alugado">Alugado</option>
+                <option value="Em Manutenção">Em Manutenção</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Propriedade</label>
+              <select class="form-select bg-black text-light border-secondary" name="ownership">
+                <option value="Próprio">Próprio</option>
+                <option value="Locado">Locado</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Data de Aquisição</label>
+              <input type="date" name="acquisition_date" class="form-control bg-black text-light border-secondary">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Data de Devolução</label>
+              <input type="date" name="return_date" class="form-control bg-black text-light border-secondary">
+            </div>
+
+            <div class="col-12">
+              <label class="form-label text-secondary small">Observações</label>
+              <textarea name="notes" class="form-control bg-black text-light border-secondary" rows="3" placeholder="Informações adicionais..."></textarea>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Ativo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// === Efeito de "Salvando..." no botão ===
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("novoAtivoForm");
+  const btn = document.getElementById("btnSalvarAtivo");
+  const spinner = document.getElementById("spinnerNovoAtivo");
+
+  form.addEventListener("submit", () => {
+    btn.disabled = true;
+    spinner.classList.remove("d-none");
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Salvando...`;
+  });
+});
+</script>

@@ -1,0 +1,65 @@
+<!-- Modal Editar Ativo -->
+<div class="modal fade" id="editAtivo{{ ativo.id }}" tabindex="-1" aria-labelledby="editAtivoLabel{{ ativo.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content bg-dark text-light border-0 rounded-4 shadow-lg">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title fw-bold" id="editAtivoLabel{{ ativo.id }}">✏️ Editar Ativo</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form class="editAtivoForm" action="{{ url_for('editar_ativo', id=ativo.id) }}" method="POST">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Marca</label>
+              <input type="text" name="brand" class="form-control bg-black text-light border-secondary" value="{{ ativo.brand }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Modelo</label>
+              <input type="text" name="model" class="form-control bg-black text-light border-secondary" value="{{ ativo.model }}">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Status</label>
+              <select name="status" class="form-select bg-black text-light border-secondary">
+                <option value="Disponível" {% if ativo.status == 'Disponível' %}selected{% endif %}>Disponível</option>
+                <option value="Alugado" {% if ativo.status == 'Alugado' %}selected{% endif %}>Alugado</option>
+                <option value="Em Manutenção" {% if ativo.status == 'Em Manutenção' %}selected{% endif %}>Em Manutenção</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Centro de Custo</label>
+              <select name="cost_center_id" class="form-select bg-black text-light border-secondary">
+                <option value="">Selecione...</option>
+                {% for centro in centros %}
+                  <option value="{{ centro.id }}" {% if ativo.cost_center_id == centro.id %}selected{% endif %}>{{ centro.code }} - {{ centro.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Usuário</label>
+              <select name="device_user_id" class="form-select bg-black text-light border-secondary">
+                <option value="">Selecione...</option>
+                {% for usuario in usuarios %}
+                  <option value="{{ usuario.id }}" {% if ativo.device_user_id == usuario.id %}selected{% endif %}>{{ usuario.first_name }} {{ usuario.last_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label text-secondary small">Observações</label>
+              <textarea name="notes" class="form-control bg-black text-light border-secondary" rows="3">{{ ativo.notes }}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

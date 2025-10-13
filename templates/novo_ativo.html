@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Cadastrar Novo Ativo</h2>
+<form method="POST">
+  <!-- Tipo de Ativo (relacionado à tabela asset_types) -->
+  <div class="mb-3">
+    <label>Tipo de Ativo *</label>
+    <select name="type_id" class="form-select" required>
+      <option value="">Selecione...</option>
+      {% for tipo in tipos %}
+      <option value="{{ tipo.id }}">{{ tipo.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- Marca e Modelo -->
+  <div class="row mb-3">
+    <div class="col">
+      <label>Marca</label>
+      <input type="text" name="brand" class="form-control">
+    </div>
+    <div class="col">
+      <label>Modelo</label>
+      <input type="text" name="model" class="form-control">
+    </div>
+  </div>
+
+  <!-- Número de Série, Hostname e NF -->
+  <div class="row mb-3">
+    <div class="col">
+      <label>Número de Série</label>
+      <input type="text" name="serial_number" class="form-control">
+    </div>
+    <div class="col">
+      <label>Hostname</label>
+      <input type="text" name="hostname" class="form-control">
+    </div>
+    <div class="col">
+      <label>Nº da Nota Fiscal</label>
+      <input type="text" name="invoice_number" class="form-control">
+    </div>
+  </div>
+
+  <!-- Patrimônio e Status -->
+  <div class="row mb-3">
+    <div class="col">
+      <label>Patrimônio</label>
+      <input type="text" name="patrimony_code" class="form-control">
+    </div>
+    <div class="col">
+      <label>Status</label>
+      <select name="status" class="form-select">
+        <option>Em uso</option>
+        <option>Em estoque</option>
+        <option>Inativo</option>
+        <option>Manutenção</option>
+      </select>
+    </div>
+    <div class="col">
+      <label>Posse</label>
+      <select name="ownership" class="form-select">
+        <option>Próprio</option>
+        <option>Locado</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Localização -->
+  <div class="mb-3">
+    <label>Localização</label>
+    <input type="text" name="location" class="form-control">
+  </div>
+
+  <!-- Centro de Custo e Usuário -->
+  <div class="row mb-3">
+    <div class="col">
+      <label>Centro de Custo</label>
+      <select name="cost_center_id" class="form-select">
+        {% for centro in centros %}
+        <option value="{{ centro.id }}">{{ centro.code }} - {{ centro.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col">
+      <label>Usuário (Funcionário)</label>
+      <select name="device_user_id" class="form-select">
+        <option value="">—</option>
+        {% for u in usuarios %}
+        <option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <!-- Datas -->
+  <div class="row mb-3">
+    <div class="col">
+      <label>Data de Aquisição</label>
+      <input type="date" name="acquisition_date" class="form-control">
+    </div>
+    <div class="col">
+      <label>Data de Devolução</label>
+      <input type="date" name="return_date" class="form-control">
+    </div>
+  </div>
+
+  <!-- Observações -->
+  <div class="mb-3">
+    <label>Observações</label>
+    <textarea name="notes" class="form-control"></textarea>
+  </div>
+
+  <button type="submit" class="btn btn-success">Salvar</button>
+  <a href="{{ url_for('ativos') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

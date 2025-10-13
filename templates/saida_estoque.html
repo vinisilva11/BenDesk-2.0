@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<a href="{{ url_for('estoque.estoque') }}" class="btn btn-outline-secondary mb-3">← Voltar para Estoque</a>
+
+<h2>Registrar Saída de Item</h2>
+
+<!-- ✅ Formulário de saída de estoque -->
+<form method="POST">
+  <div class="mb-3">
+    <label for="item_id" class="form-label">Item</label>
+    <select name="item_id" id="item_id" class="form-select" required>
+      <option value="">Selecione o item</option>
+      {% for item in itens %}
+        <option value="{{ item.id }}">{{ item.nome }} ({{ item.quantidade }} {{ item.unidade }})</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label for="quantidade" class="form-label">Quantidade a retirar</label>
+    <input type="number" name="quantidade" id="quantidade" class="form-control" min="1" step="any" required>
+  </div>
+
+  <div class="mb-3">
+    <label for="responsavel" class="form-label">Responsável</label>
+    <input type="text" name="responsavel" id="responsavel" class="form-control" required>
+  </div>
+
+  <div class="mb-3">
+    <label for="observacoes" class="form-label">Observações (opcional)</label>
+    <textarea name="observacoes" id="observacoes" class="form-control" rows="3"></textarea>
+  </div>
+
+  <div class="d-flex justify-content-end">
+    <button type="submit" class="btn btn-warning">Registrar Saída</button>
+  </div>
+</form>
+{% endblock %}

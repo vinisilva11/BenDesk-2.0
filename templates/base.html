@@ -1,126 +1,290 @@
-<!doctype html>
-<html lang="pt-br" data-bs-theme="light"> <!-- ✅ Adicionamos data-bs-theme para permitir alternar entre light/dark -->
+<!DOCTYPE html>
+<html lang="pt-br">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>BenDesk</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}BenDesk{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
-    <!-- ✅ Ícone do site -->
-    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- ✅ Estilo principal -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    :root {
+      --bg: #0e0f12;
+      --sidebar-bg: #121418;
+      --card-bg: #181b20;
+      --text: #ffffff;         /* texto principal branco */
+      --muted: #b3b3b3;        /* texto secundário */
+      --accent: #0d6efd;
+      --accent-2: #198754;
+      --accent-3: #ffc107;
+      --border: rgba(255, 255, 255, 0.08);
+      --radius: 1rem;
+      --shadow: 0 4px 25px rgba(0, 0, 0, 0.3);
+    }
 
-    <!-- ✅ Bootstrap principal -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      min-height: 100vh;
+      margin: 0;
+    }
 
-    <!-- ✅ Ícones do Bootstrap -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      width: 250px;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05);
+      padding-top: 2rem;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 100;
+    }
 
-    <style>
-        /* ✅ Ajustes para Dark Mode */
-        body[data-bs-theme="dark"] {
-            background-color: #121212;
-            color: #e0e0e0;
-        }
+    .sidebar h4 {
+      font-weight: 700;
+      color: var(--accent);
+      text-align: center;
+      margin-bottom: 2rem;
+      letter-spacing: 0.5px;
+    }
 
-        /* ✅ Ajuste para inputs em dark mode */
-        body[data-bs-theme="dark"] input,
-        body[data-bs-theme="dark"] textarea,
-        body[data-bs-theme="dark"] select {
-            background-color: #1e1e1e;
-            color: #e0e0e0;
-            border: 1px solid #444;
-        }
+    .nav-link {
+      color: var(--muted);
+      font-weight: 500;
+      padding: 12px 20px;
+      border-radius: 8px;
+      margin: 4px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
 
-        /* ✅ Corrige bordas de tabelas em dark mode */
-        body[data-bs-theme="dark"] table {
-            color: #e0e0e0;
-        }
+    .nav-link:hover, .nav-link.active {
+      background-color: rgba(13, 110, 253, 0.15);
+      color: #fff !important;
+    }
 
-        /* ✅ Navbar logo tamanho */
-        .navbar-logo {
-            height: 32px;
-            margin-right: 8px;
-        }
-    </style>
+    .nav-link i {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    main {
+      margin-left: 250px;
+      padding: 2rem;
+      flex-grow: 1;
+    }
+
+    @media (max-width: 991px) {
+      .sidebar {
+        width: 70px;
+      }
+
+      .sidebar h4 {
+        display: none;
+      }
+
+      .nav-link span {
+        display: none;
+      }
+
+      main {
+        margin-left: 70px;
+      }
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 0 20px rgba(13, 110, 253, 0.25);
+    }
+
+    /* ===== TEXTOS ===== */
+    h1, h2, h3, h4, h5, h6, p, span, strong, a, td, th {
+      color: var(--text);
+    }
+
+    .metric-value {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .metric-label, small, .text-muted {
+      color: var(--muted) !important;
+    }
+
+    .footer {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 3rem;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+    }
+
+    #clock {
+      color: var(--muted);
+      font-size: 0.9rem;
+      text-align: right;
+      margin-bottom: 1rem;
+    }
+
+    .table {
+      border-collapse: separate;
+      border-spacing: 0 6px;
+    }
+
+    .table thead {
+      background-color: #1c1f26 !important;
+    }
+
+    .table tbody tr {
+      transition: all 0.2s ease;
+    }
+
+    .table tbody tr:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .badge {
+      font-size: 0.8rem;
+      border-radius: 12px;
+    }
+
+    /* Transição suave */
+    .alert {
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    /* Some quando NÃO estiver com .show (padrão Bootstrap) */
+    .alert.fade:not(.show) {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+
+    /* ===== EFEITO FADE-IN SUAVE NOS MODAIS ===== */
+    .modal.fade .modal-dialog {
+      transform: translateY(-10px);
+      opacity: 0;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .modal.show .modal-dialog {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+
+  </style>
 </head>
+
 <body>
-    <!-- ✅ Barra de navegação -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
-                <img src="{{ url_for('static', filename='logo-bendesk-navbar.png') }}" alt="BenDesk" class="navbar-logo">
-                <span class="fw-bold text-white">BenDesk</span>
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                {% if current_user.is_authenticated %}
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">Início</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('new_ticket') }}">Novo Chamado</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('tickets') }}">Chamados</a>
-                    </li>
-                    {% if current_user.profile in ['Administrador', 'Suporte'] %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('my_tickets') }}">Meus Chamados</a>
-                    </li>
-                    {% endif %}
-                    {% if current_user.profile == 'Administrador' %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('users') }}">Usuários</a>
-                    </li>
-                    {% endif %}
-                </ul>
-                <div class="d-flex align-items-center gap-2">
-                    <button id="toggleTheme" class="btn btn-outline-light btn-sm" title="Alternar tema">
-                        <i class="bi bi-moon-fill"></i>
-                    </button>
-                    <span class="navbar-text me-2">
-                        Olá, {{ current_user.first_name }} {{ current_user.last_name }}!
-                    </span>
-                    <a class="btn btn-outline-light btn-sm" href="{{ url_for('logout') }}">Logout</a>
-                </div>
-                {% endif %}
-            </div>
-        </div>
+  <!-- ===== SIDEBAR ===== -->
+  <div class="sidebar">
+    <h4>BenDesk</h4>
+    <nav class="nav flex-column">
+      <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
+        <i data-lucide="home"></i> <span>Dashboard</span>
+      </a>
+      <a href="{{ url_for('chamados_painel') }}" class="nav-link">
+        <i data-lucide="inbox"></i> <span>Chamados</span>
+      </a>
+      <a href="{{ url_for('ativos') }}" class="nav-link {% if request.endpoint == 'ativos' %}active{% endif %}">
+        <i data-lucide="cpu"></i> <span>Ativos</span>
+      </a>
+      <a href="{{ url_for('estoque.estoque') }}" class="nav-link {% if request.endpoint == 'estoque.estoque' %}active{% endif %}">
+        <i data-lucide="package"></i> <span>Estoque</span>
+      </a>
+      <a href="{{ url_for('usuarios_dispositivo') }}" class="nav-link {% if request.endpoint == 'usuarios_dispositivo' %}active{% endif %}">
+        <i data-lucide="users"></i> <span>Usuários</span>
+      </a>
+      <a href="{{ url_for('centros_de_custo') }}" class="nav-link {% if request.endpoint == 'centros_de_custo' %}active{% endif %}">
+        <i data-lucide="building"></i> <span>Centros de Custo</span>
+      </a>
+      <a href="{{ url_for('tipos_dispositivo') }}" class="nav-link {% if request.endpoint == 'tipos_dispositivo' %}active{% endif %}">
+        <i data-lucide="layers"></i> <span>Tipos de Dispositivo</span>
+      </a>
+      <hr class="text-secondary mx-3">
+      <a href="{{ url_for('logout') }}" class="nav-link text-danger">
+        <i data-lucide="log-out"></i> <span>Sair</span>
+      </a>
     </nav>
+  </div>
 
-    <!-- ✅ Conteúdo principal -->
-    <div class="container mt-4">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-info">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        {% block content %}{% endblock %}
+  <!-- ===== MAIN CONTENT ===== -->
+  <main>
+    <div id="clock"></div>
+    
+    <!-- 🔔 Mensagens de alerta (Flash) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="container mt-3">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+    {% block content %}{% endblock %}
+
+    <div class="footer">
+      <p>© {{ datetime.utcnow().year }} <strong>BenDesk</strong> — Desenvolvido por Vinicius 👨‍💻</p>
     </div>
+  </main>
 
-    <!-- ✅ Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Bootstrap JS Bundle (com Popper incluído) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- ✅ Script para alternar tema -->
-    <script>
-        const toggleTheme = document.getElementById('toggleTheme');
-        toggleTheme?.addEventListener('click', () => {
-            const html = document.querySelector('html');
-            const current = html.getAttribute('data-bs-theme');
-            const newTheme = current === 'light' ? 'dark' : 'light';
-            html.setAttribute('data-bs-theme', newTheme);
-            toggleTheme.innerHTML = newTheme === 'light' ? '<i class="bi bi-moon-fill"></i>' : '<i class="bi bi-sun-fill"></i>';
-        });
-    </script>
 
-    {% block scripts %}{% endblock %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    lucide.createIcons();
+
+    // 🔔 Fade-out automático das mensagens flash
+    document.querySelectorAll('.alert').forEach((el) => {
+      setTimeout(() => {
+        // Usa a API do Bootstrap para fechar com animação
+        const inst = bootstrap.Alert.getOrCreateInstance(el);
+        inst.close();
+      }, 5000); // 5s na tela
+    });
+  });
+
+  // Relógio (mantém como estava)
+  function atualizarRelogio() {
+    const agora = new Date();
+    const dias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const hora = agora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const data = `${dias[agora.getDay()]}, ${agora.getDate()}/${agora.getMonth() + 1}/${agora.getFullYear()}`;
+    document.getElementById('clock').textContent = `🕒 ${hora} — ${data}`;
+  }
+  atualizarRelogio();
+  setInterval(atualizarRelogio, 30000);
+</script>
+
+
+
 </body>
 </html>

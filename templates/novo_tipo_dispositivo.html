@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Novo Tipo de Dispositivo</h2>
+
+<form method="POST">
+  <div class="mb-3">
+    <label>Nome do Tipo</label>
+    <input type="text" name="name" class="form-control" required>
+  </div>
+  <button type="submit" class="btn btn-success">Salvar</button>
+  <a href="{{ url_for('tipos_dispositivo') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

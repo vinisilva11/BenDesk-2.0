@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>📜 Histórico de Movimentações</h2>
+
+<table class="table table-bordered table-striped mt-3">
+  <thead class="table-light">
+  <tr>
+    <th>Data</th>
+    <th>Tipo</th>
+    <th>Código</th>
+    <th>Item</th>
+    <th>Quantidade</th>
+    <th>Descrição</th>
+    <th>Usuário</th>
+  </tr>
+</thead>
+<tbody>
+  {% for mov in historico %}
+  <tr>
+    <td>{{ mov.timestamp.strftime('%d/%m/%Y %H:%M') }}</td>
+    <td>
+      {% if mov.tipo == 'entrada' %}
+        <span class="badge bg-success">Entrada</span>
+      {% else %}
+        <span class="badge bg-warning text-dark">Saída</span>
+      {% endif %}
+    </td>
+    <td>#{{ mov.item_id }}</td>
+    <td>{{ mov.item.nome if mov.item else '—' }}</td>
+    <td>{{ mov.quantidade }}</td>
+    <td>{{ mov.descricao or '—' }}</td>
+    <td>{{ mov.user or '—' }}</td>
+  </tr>
+  {% endfor %}
+</tbody>
+</table>
+
+<a href="{{ url_for('estoque.estoque') }}" class="btn btn-outline-secondary mt-3">← Voltar</a>
+{% endblock %}

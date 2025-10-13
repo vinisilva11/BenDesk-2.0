@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+<a href="{{ url_for('ativos') }}" class="btn btn-outline-secondary mb-3">← Voltar para Gestão de Ativos</a>  
+<a href="{{ url_for('novo_centro_de_custo') }}" class="btn btn-primary">+ Novo Centro</a>
+</div>
+<div class="d-flex justify-content-center align-items-center mb-3">
+  <h2>Centros de Custo</h2>
+</div>
+
+<table class="table table-bordered table-striped text-center">
+  <thead>
+    <tr>
+      <th>Código</th>
+      <th>Nome</th>
+      <th>Data de Cadastro</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for centro in centros %}
+    <tr>
+      <td>{{ centro.code }}</td>
+      <td>{{ centro.name }}</td>
+      <td>{{ centro.created_at.strftime('%d/%m/%Y') }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

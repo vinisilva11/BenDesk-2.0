@@ -1,40 +1,108 @@
-{% extends 'base.html' %}
-
+{% extends "base.html" %}
 {% block content %}
-<div class="container mt-4">
-    <h2>Criar Novo Ticket</h2>
-    <form method="POST" enctype="multipart/form-data">
-        <div class="mb-3">
-            <label for="title" class="form-label">Título</label>
-            <input type="text" class="form-control" name="title" required>
-        </div>
-        <div class="mb-3">
-            <label for="description" class="form-label">Descrição</label>
-            <textarea class="form-control" name="description" rows="5" required></textarea>
-        </div>
-        <div class="mb-3">
-            <label for="priority" class="form-label">Prioridade</label>
-            <select class="form-select" name="priority">
-                <option value="Muito Alta">Muito Alta</option>
-                <option value="Alta">Alta</option>
-                <option value="Média" selected>Média</option>
-                <option value="Baixa">Baixa</option>
-                <option value="Muito Baixa">Muito Baixa</option>
-            </select>
-        </div>
-        <div class="mb-3">
-            <label for="requester_name" class="form-label">Nome do Solicitante</label>
-            <input type="text" class="form-control" name="requester_name" required>
-        </div>
-        <div class="mb-3">
-            <label for="requester_email" class="form-label">E-mail do Solicitante</label>
-            <input type="email" class="form-control" name="requester_email" required>
-        </div>
-        <div class="mb-3">
-            <label for="file" class="form-label">Anexo (opcional)</label>
-            <input type="file" class="form-control" name="file">
-        </div>
-        <button type="submit" class="btn btn-primary">Criar Ticket</button>
-    </form>
+<div class="container-fluid py-4">
+
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold text-white mb-0">🆕 Novo Chamado</h3>
+    <a href="{{ url_for('tickets') }}" class="btn btn-outline-light">
+      <i data-lucide="arrow-left"></i> Voltar à Lista
+    </a>
+  </div>
+
+  <!-- Formulário -->
+  <form method="POST" enctype="multipart/form-data" class="card bg-dark p-4 shadow-lg border-0 rounded-4">
+    <div class="row g-4">
+
+      <!-- Solicitante -->
+      <div class="col-md-6">
+        <label for="requester_name" class="form-label text-secondary small">Nome do Solicitante</label>
+        <input type="text" name="requester_name" id="requester_name"
+               class="form-control bg-black text-white border-secondary"
+               placeholder="Ex: João da Silva" required>
+      </div>
+
+      <div class="col-md-6">
+        <label for="requester_email" class="form-label text-secondary small">E-mail do Solicitante</label>
+        <input type="email" name="requester_email" id="requester_email"
+               class="form-control bg-black text-white border-secondary"
+               placeholder="Ex: joao@empresa.com" required>
+      </div>
+
+      <!-- Título -->
+      <div class="col-12">
+        <label for="title" class="form-label text-secondary small">Título do Chamado</label>
+        <input type="text" name="title" id="title"
+               class="form-control bg-black text-white border-secondary"
+               placeholder="Resumo breve do problema" required>
+      </div>
+
+      <!-- Descrição -->
+      <div class="col-12">
+        <label for="description" class="form-label text-secondary small">Descrição Detalhada</label>
+        <textarea name="description" id="description" rows="5"
+                  class="form-control bg-black text-white border-secondary"
+                  placeholder="Descreva o problema, contexto e possíveis soluções..." required></textarea>
+      </div>
+
+      <!-- Prioridade -->
+      <div class="col-md-6">
+        <label for="priority" class="form-label text-secondary small">Prioridade</label>
+        <select name="priority" id="priority" class="form-select bg-black text-white border-secondary">
+          <option value="Baixa">Baixa</option>
+          <option value="Média" selected>Média</option>
+          <option value="Alta">Alta</option>
+        </select>
+      </div>
+
+      <!-- Anexo -->
+      <div class="col-md-6">
+        <label for="file" class="form-label text-secondary small">Anexo (opcional)</label>
+        <input type="file" name="file" id="file"
+               class="form-control bg-black text-white border-secondary">
+      </div>
+    </div>
+
+    <!-- Botões -->
+    <div class="d-flex justify-content-end mt-4">
+      <a href="{{ url_for('tickets') }}" class="btn btn-outline-light me-2">
+        <i data-lucide="x"></i> Cancelar
+      </a>
+      <button type="submit" class="btn btn-success px-4">
+        <i data-lucide="send"></i> Enviar Chamado
+      </button>
+    </div>
+  </form>
 </div>
+
+<!-- Estilo extra -->
+<style>
+  input, textarea, select {
+    border-radius: 10px !important;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 6px rgba(13, 110, 253, 0.4) !important;
+  }
+
+  .btn-success {
+    background: linear-gradient(90deg, #198754, #28a745);
+    border: none;
+    font-weight: 600;
+  }
+
+  .btn-success:hover {
+    background: linear-gradient(90deg, #157347, #1e9a5b);
+  }
+
+  .card {
+    background: rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(8px);
+  }
+</style>
+
+<script>
+  lucide.createIcons();
+</script>
 {% endblock %}

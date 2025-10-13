@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Novo Usuário de Dispositivo</h2>
+<form method="POST">
+  <div class="row mb-3">
+    <div class="col">
+      <label>Nome</label>
+      <input type="text" name="first_name" class="form-control" required>
+    </div>
+    <div class="col">
+      <label>Sobrenome</label>
+      <input type="text" name="last_name" class="form-control">
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col">
+      <label>E-mail</label>
+      <input type="email" name="email" class="form-control">
+    </div>
+    <div class="col">
+      <label>Departamento</label>
+      <input type="text" name="department" class="form-control">
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label>Centro de Custo</label>
+    <select name="cost_center_id" class="form-select">
+      {% for centro in centros %}
+      <option value="{{ centro.id }}">{{ centro.code }} - {{ centro.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <button type="submit" class="btn btn-success">Salvar</button>
+  <a href="{{ url_for('usuarios_dispositivo') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

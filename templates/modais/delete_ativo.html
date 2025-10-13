@@ -1,0 +1,20 @@
+<!-- Modal Excluir Ativo -->
+<div class="modal fade" id="deleteAtivo{{ ativo.id }}" tabindex="-1" aria-labelledby="deleteAtivoLabel{{ ativo.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-light border-0 rounded-4 shadow-lg">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title fw-bold" id="deleteAtivoLabel{{ ativo.id }}">🗑️ Confirmar Exclusão</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <p>Tem certeza que deseja excluir o ativo <strong>{{ ativo.brand }} {{ ativo.model }}</strong>?</p>
+      </div>
+      <div class="modal-footer border-secondary justify-content-center">
+        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+        <form action="{{ url_for('excluir_ativo', id=ativo.id) }}" method="POST" style="display:inline;">
+          <button type="submit" class="btn btn-danger">Excluir</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

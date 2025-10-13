@@ -1,77 +1,113 @@
 {% extends 'base.html' %}
+{% block title %}Dashboard | BenDesk{% endblock %}
 
 {% block content %}
-<div class="text-center">
-    <!--<h1>Bem-vindo ao BenDesk, {{ user.first_name }} {{ user.last_name }}!</h1>-->
-    <div class="text-center">
-        <img src="{{ url_for('static', filename='Logo_BenDesk.png') }}" alt="BenDesk Logo" style="height: 130px; margin-bottom: -20px;">
-        <h1>Bem-vindo ao BenDesk, {{ current_user.first_name }} {{ current_user.last_name }}!</h1>
-    </div>
-    <p>Programa na versão BETA 1.0.</p>    
-    <p>Painel completo para gerenciar chamados, ativos, impressoras, pagamentos e muito mais.</p>
+<div class="container-fluid">
+  <h2 class="fw-bold mb-4">📊 Visão Geral</h2>
 
-    <div class="row mt-5">
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Chamados</h5>
-                    <p class="card-text">Gerencie todos os chamados de TI.</p>
-                    <a href="{{ url_for('tickets') }}" class="btn btn-primary">Ver Chamados</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Ativos</h5>
-                    <p class="card-text">Controle de ativos próprios e locados.</p>
-                    <a href="#" class="btn btn-primary">Ver Ativos</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Financeiro</h5>
-                    <p class="card-text">Pagamentos de fornecedores e contratos.</p>
-                    <a href="#" class="btn btn-primary">Ver Financeiro</a>
-                </div>
-            </div>
-        </div>
+  <!-- ===== MÉTRICAS ===== -->
+  <div class="row g-4">
+    <div class="col-md-3">
+      <div class="card text-center p-4">
+        <i data-lucide="folder-plus" class="mb-2" style="color: var(--accent);"></i>
+        <p class="metric-value">{{ open_count }}</p>
+        <p class="metric-label">Abertos</p>
+      </div>
     </div>
-    <div class="row justify-content-center">
-        <div class="col-md-4">
-            <div class="card text-white bg-danger mb-3">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Chamados Abertos</h5>
-                    <p class="card-text display-4">{{ open_count }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-white bg-warning mb-3">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Chamados em Andamento</h5>
-                    <p class="card-text display-4">{{ in_progress_count }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-white bg-success mb-3">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Chamados Encerrados</h5>
-                    <p class="card-text display-4">{{ closed_count }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-white bg-info mb-3">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Tempo Médio de Resolução</h5>
-                    <h1>{{ avg_resolution }}</h1>
-                </div>
-            </div>
-        </div>
-    </div>    
+    <div class="col-md-3">
+      <div class="card text-center p-4">
+        <i data-lucide="loader" class="mb-2" style="color: var(--accent-3);"></i>
+        <p class="metric-value">{{ in_progress_count }}</p>
+        <p class="metric-label">Em Andamento</p>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center p-4">
+        <i data-lucide="check-circle" class="mb-2" style="color: var(--accent-2);"></i>
+        <p class="metric-value">{{ closed_count }}</p>
+        <p class="metric-label">Encerrados</p>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center p-4">
+        <i data-lucide="clock" class="mb-2" style="color: #6f42c1;"></i>
+        <p class="metric-value">{{ avg_resolution }}</p>
+        <p class="metric-label">Tempo Médio</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== GRÁFICOS ===== -->
+  <div class="row mt-5">
+    <div class="col-md-7">
+      <div class="card p-4">
+        <h5 class="fw-bold mb-3"><i data-lucide="bar-chart-3" class="me-2"></i> Chamados</h5>
+        <canvas id="chartChamados" height="120"></canvas>
+      </div>
+    </div>
+    <div class="col-md-5">
+      <div class="card p-4">
+        <h5 class="fw-bold mb-3"><i data-lucide="pie-chart" class="me-2"></i> Ativos</h5>
+        <canvas id="chartAtivos" height="120"></canvas>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- ===== SCRIPTS ===== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  lucide.createIcons();
+
+  // ===== Dados dos chamados =====
+  const chamadosData = JSON.parse('{{ [open_count, in_progress_count, closed_count] | tojson | safe }}');
+
+  new Chart(document.getElementById('chartChamados'), {
+    type: 'bar',
+    data: {
+      labels: ['Abertos', 'Em Andamento', 'Encerrados'],
+      datasets: [{
+        data: chamadosData,
+        backgroundColor: ['#0d6efd', '#ffc107', '#198754'],
+        borderRadius: 8
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          ticks: { color: '#fff' },
+          grid: { display: false }
+        },
+        y: {
+          ticks: { color: '#fff' },
+          grid: { color: 'rgba(255,255,255,0.1)' }
+        }
+      },
+      animation: { duration: 1200 }
+    }
+  });
+
+  // ===== Gráfico de Ativos =====
+  new Chart(document.getElementById('chartAtivos'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Computadores', 'Monitores', 'Notebooks', 'Outros'],
+      datasets: [{
+        data: [12, 8, 5, 3],
+        backgroundColor: ['#0d6efd', '#6610f2', '#198754', '#6c757d'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#fff' }
+        }
+      },
+      animation: { animateScale: true }
+    }
+  });
+</script>
 {% endblock %}

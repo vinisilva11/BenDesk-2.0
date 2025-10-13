@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid py-4">
+
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold text-white">📦 Lista de Itens em Estoque</h3>
+    <a href="{{ url_for('estoque.estoque') }}" class="btn btn-outline-light d-flex align-items-center gap-2">
+      <i data-lucide="arrow-left"></i> Voltar ao Painel
+    </a>
+  </div>
+
+  <!-- Filtros -->
+  <form method="get" class="row g-3 mb-4">
+    <div class="col-md-6 col-lg-4">
+      <label class="form-label text-secondary small">Categoria</label>
+      <select name="categoria" class="form-select bg-dark text-light border-secondary">
+        <option value="">Todas</option>
+        {% for categoria in categorias %}
+        <option value="{{ categoria }}" {% if filtro_categoria == categoria %}selected{% endif %}>
+          {{ categoria }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+      <label class="form-label text-secondary small">Status</label>
+      <select name="status" class="form-select bg-dark text-light border-secondary">
+        <option value="">Todos</option>
+        <option value="Disponível" {% if filtro_status == 'Disponível' %}selected{% endif %}>Disponível</option>
+        <option value="Reservado" {% if filtro_status == 'Reservado' %}selected{% endif %}>Reservado</option>
+        <option value="Baixo Estoque" {% if filtro_status == 'Baixo Estoque' %}selected{% endif %}>Baixo Estoque</option>
+      </select>
+    </div>
+
+    <div class="col-12 d-flex justify-content-end mt-2">
+      <button type="submit" class="btn btn-primary me-2">
+        <i data-lucide="filter"></i> Filtrar
+      </button>
+      <a href="{{ url_for('estoque.lista_estoque') }}" class="btn btn-outline-light">
+        <i data-lucide="refresh-ccw"></i> Limpar
+      </a>
+    </div>
+  </form>
+
+  <!-- Tabela -->
+  <div class="table-responsive">
+    <table class="table table-dark table-hover align-middle rounded-3 overflow-hidden shadow-sm">
+      <thead class="bg-black bg-opacity-50">
+        <tr class="text-secondary text-uppercase small">
+          <th>ID</th>
+          <th>Nome</th>
+          <th>Categoria</th>
+          <th>Unidade</th>
+          <th>Quantidade</th>
+          <th>Status</th>
+          <th>Última Movimentação</th>
+          <th class="text-center">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in itens %}
+        <tr>
+          <td class="fw-semibold text-white">{{ item.id }}</td>
+          <td>{{ item.nome or '—' }}</td>
+          <td>{{ item.categoria or '—' }}</td>
+          <td>{{ item.unidade or '—' }}</td>
+          <td>{{ item.quantidade }}</td>
+          <td>
+            {% if item.status == 'Disponível' %}
+              <span class="badge bg-success">{{ item.status }}</span>
+            {% elif item.status == 'Reservado' %}
+              <span class="badge bg-warning text-dark">{{ item.status }}</span>
+            {% elif item.status == 'Baixo Estoque' %}
+              <span class="badge bg-danger">{{ item.status }}</span>
+            {% else %}
+              <span class="badge bg-secondary">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% set mov = item.movimentacoes|sort(attribute='timestamp', reverse=True)|first %}
+            {{ mov.timestamp.strftime('%d/%m/%Y %H:%M') if mov else '—' }}
+          </td>
+          <td class="text-center">
+            <div class="d-flex justify-content-center gap-2">
+              <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#viewItem{{ item.id }}">
+                <i data-lucide="eye"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editItem{{ item.id }}">
+                <i data-lucide="edit"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteItem{{ item.id }}">
+                <i data-lucide="trash-2"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Modais -->
+        {% include 'modais/view_item.html' %}
+        {% include 'modais/edit_item.html' %}
+        {% include 'modais/delete_item.html' %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if not itens %}
+  <div class="text-center text-secondary py-4">
+    Nenhum item encontrado no estoque.
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- <style>
+  .table-dark td, .table-dark th {
+    color: #f8f9fa;
+  }
+  .badge { font-size: 0.75rem; padding: 6px 10px; }
+  .btn-outline-info:hover { background-color: #0dcaf0; color: #000; }
+  .btn-outline-warning:hover { background-color: #ffc107; color: #000; }
+  .btn-outline-danger:hover { background-color: #dc3545; color: #fff; }
+</style> -->
+
+<script>
+  lucide.createIcons();
+</script>
+
+{% endblock %}

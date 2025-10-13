@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <a href="{{ url_for('ativos') }}" class="btn btn-outline-secondary mb-3">← Voltar para Gestão de Ativos</a>
+  <a href="{{ url_for('novo_usuario_dispositivo') }}" class="btn btn-primary">+ Novo Usuário</a>
+</div>
+
+<div class="d-flex justify-content-center align-items-center mb-3">
+  <h2>Usuários de Dispositivo</h2>
+</div>
+
+<table class="table table-bordered table-striped text-center">
+  <thead>
+    <tr>
+      <th>Nome</th>
+      <th>E-mail</th>
+      <th>Departamento</th>
+      <th>Centro de Custo</th>
+      <th>Ações</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for u in usuarios %}
+    <tr id="row-{{ u.id }}">
+      <td>
+        <span class="view">{{ u.first_name }} {{ u.last_name }}</span>
+        <div class="edit d-none">
+          <input class="form-control mb-1" name="first_name" value="{{ u.first_name }}">
+          <input class="form-control" name="last_name" value="{{ u.last_name }}">
+        </div>
+      </td>
+      <td>
+        <span class="view">{{ u.email }}</span>
+        <input class="form-control edit d-none" name="email" value="{{ u.email }}">
+      </td>
+      <td>
+        <span class="view">{{ u.department }}</span>
+        <input class="form-control edit d-none" name="department" value="{{ u.department }}">
+      </td>
+      <td>
+        <span class="view">
+          {% for c in centros if c.id == u.cost_center_id %}
+            {{ c.code }} - {{ c.name }}
+          {% endfor %}
+        </span>
+        <select class="form-select edit d-none" name="cost_center_id">
+          {% for c in centros %}
+          <option value="{{ c.id }}" {% if c.id == u.cost_center_id %}selected{% endif %}>
+            {{ c.code }} - {{ c.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </td>
+      <td>
+        <button class="btn btn-sm btn-warning view" onclick="habilitarEdicao({{ u.id }})">✏️</button>
+        <button class="btn btn-sm btn-success edit d-none" onclick="salvarEdicao({{ u.id }})">💾</button>
+        <button class="btn btn-sm btn-danger" onclick="excluirUsuario({{ u.id }})">🗑️</button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function habilitarEdicao(id) {
+    const row = document.getElementById(`row-${id}`);
+    row.querySelectorAll('.view').forEach(el => el.classList.add('d-none'));
+    row.querySelectorAll('.edit').forEach(el => el.classList.remove('d-none'));
+  }
+
+  function salvarEdicao(id) {
+    const row = document.getElementById(`row-${id}`);
+    const data = {
+      first_name: row.querySelector('[name="first_name"]').value,
+      last_name: row.querySelector('[name="last_name"]').value,
+      email: row.querySelector('[name="email"]').value,
+      department: row.querySelector('[name="department"]').value,
+      cost_center_id: row.querySelector('[name="cost_center_id"]').value
+    };
+
+    fetch(`/usuarios-dispositivo/editar/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(response => {
+      if (response.ok) {
+        showToast('toast-success');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        showToast('toast-error');
+      }
+    });
+  }
+
+  function excluirUsuario(id) {
+    if (confirm("Tem certeza que deseja excluir este usuário?")) {
+      fetch(`/usuarios-dispositivo/excluir/${id}`, {
+        method: "DELETE"
+      }).then(response => {
+        if (response.ok) {
+          document.getElementById(`row-${id}`).remove();
+          showToast('toast-success');
+        } else {
+          showToast('toast-error');
+        }
+      });
+    }
+  }
+</script>
+{% endblock %}

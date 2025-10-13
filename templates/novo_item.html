@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<a href="{{ url_for('estoque.estoque') }}" class="btn btn-outline-secondary mb-3">← Voltar para Estoque</a>
+<h2>Novo Item de Estoque</h2>
+
+<!-- ✅ Formulário para adicionar novo item -->
+<form method="POST">
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <label class="form-label">Nome</label>
+      <input type="text" name="nome" class="form-control" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Categoria</label>
+      <select name="categoria" class="form-select" required>
+      <option value="">Selecione a categoria</option>
+      <option value="Periféricos">Periféricos</option>
+      <option value="Acessórios de Computador">Acessórios de Computador</option>
+      <option value="Armazenamento">Armazenamento</option>
+      <option value="Redes e Conectividade">Redes e Conectividade</option>
+      <option value="Componentes de Hardware">Componentes de Hardware</option>
+      <option value="Energia">Energia</option>
+      <option value="Impressão">Impressão</option>
+      <option value="Suprimentos de Limpeza e Manutenção">Suprimentos de Limpeza e Manutenção</option>
+      <option value="Equipamentos de Áudio">Equipamentos de Áudio</option>
+      <option value="Equipamentos de Vídeo">Equipamentos de Vídeo</option>
+      <option value="Computadores e Notebooks">Computadores e Notebooks</option>
+    </select>
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-md-4">
+      <label class="form-label">Quantidade</label>
+      <input type="number" name="quantidade" class="form-control" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Unid. Medida</label>
+      <select name="unidade" class="form-select" required>
+      <option value="">Selecione a Unid. Medida</option>  
+      <option value="Unidade">Unidade</option>
+      <option value="Caixa">Caixa</option>
+      <option value="Kit">Kit</option>
+      <option value="Peça">Peça</option>
+      <option value="Pacote">Pacote</option>
+    </select>
+    </div>
+  </div>
+  <div class="mb-3">
+  <label class="form-label">Observações</label>
+  <textarea name="observacoes" class="form-control" rows="2"></textarea>
+</div>
+
+
+  <button type="submit" class="btn btn-success">Salvar Item</button>
+</form>
+{% endblock %}

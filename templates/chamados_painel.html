@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold text-white">📊 Painel de Chamados</h3>
+    <a href="{{ url_for('tickets') }}" class="btn btn-outline-light">
+      <i data-lucide="list"></i> Ver Lista de Chamados
+    </a>
+  </div>
+
+  <div class="row g-4 mb-5">
+    <div class="col-md-3"><div class="card text-center p-4"><i data-lucide="folder-plus" class="mb-2" style="color:#0d6efd;"></i><p class="metric-value text-white">{{ open_count }}</p><p class="metric-label">Abertos</p></div></div>
+    <div class="col-md-3"><div class="card text-center p-4"><i data-lucide="loader" class="mb-2" style="color:#ffc107;"></i><p class="metric-value text-white">{{ in_progress_count }}</p><p class="metric-label">Em Andamento</p></div></div>
+    <div class="col-md-3"><div class="card text-center p-4"><i data-lucide="check-circle" class="mb-2" style="color:#198754;"></i><p class="metric-value text-white">{{ closed_count }}</p><p class="metric-label">Encerrados</p></div></div>
+    <div class="col-md-3"><div class="card text-center p-4"><i data-lucide="clock" class="mb-2" style="color:#6f42c1;"></i><p class="metric-value text-white">{{ avg_resolution }}</p><p class="metric-label">Tempo Médio</p></div></div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-7">
+      <div class="card p-4">
+        <h5 class="fw-bold mb-3 text-white"><i data-lucide="bar-chart-3" class="me-2"></i> Chamados</h5>
+        <canvas id="chartChamados" height="140"></canvas>
+      </div>
+    </div>
+    <div class="col-md-5">
+      <div class="card p-4">
+        <h5 class="fw-bold mb-3 text-white"><i data-lucide="pie-chart" class="me-2"></i> Prioridades</h5>
+        <canvas id="chartPrioridades" height="140"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Últimos Chamados -->
+<div class="card p-4 mt-4">
+  <h5 class="fw-bold mb-3"><i data-lucide="clock" class="me-2"></i> Últimos Chamados</h5>
+  <div class="table-responsive">
+    <table class="table table-dark table-hover align-middle">
+      <thead>
+        <tr class="text-secondary text-uppercase small">
+          <th>ID</th>
+          <th>Título</th>
+          <th>Solicitante</th>
+          <th>Status</th>
+          <th>Prioridade</th>
+          <th>Data / Hora</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ticket in last_tickets %}
+        <tr>
+          <td class="fw-semibold">{{ ticket.id }}</td>
+          <td>{{ ticket.title }}</td>
+          <td>
+            <div class="d-flex align-items-center gap-3">
+              {% if ticket.avatar_path %}
+                <img src="{{ url_for('static', filename='uploads/avatars/' + ticket.avatar_path) }}"
+                     alt="Avatar"
+                     class="rounded-circle"
+                     width="35"
+                     height="35"
+                     style="object-fit: cover; border: 2px solid rgba(255,255,255,0.15);">
+              {% else %}
+                <img src="{{ url_for('static', filename='img/default-avatar.png') }}"
+                     alt="Avatar"
+                     class="rounded-circle"
+                     width="35"
+                     height="35"
+                     style="opacity: 0.8; border: 2px solid rgba(255,255,255,0.1);">
+              {% endif %}
+              <div>
+                <div class="fw-semibold small text-white">{{ ticket.requester_name or '—' }}</div>
+                <div class="text-secondary small">{{ ticket.requester_email or '—' }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            {% if ticket.status == 'Aberto' %}
+              <span class="badge bg-primary">{{ ticket.status }}</span>
+            {% elif ticket.status == 'Em Andamento' %}
+              <span class="badge bg-warning text-dark">{{ ticket.status }}</span>
+            {% else %}
+              <span class="badge bg-success">{{ ticket.status }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if ticket.priority == 'Alta' %}
+              <span class="badge bg-danger">{{ ticket.priority }}</span>
+            {% elif ticket.priority == 'Média' %}
+              <span class="badge bg-warning text-dark">{{ ticket.priority }}</span>
+            {% else %}
+              <span class="badge bg-secondary">{{ ticket.priority }}</span>
+            {% endif %}
+          </td>
+          <td class="text-secondary">
+            {{ ticket.created_at.strftime('%d/%m/%Y %H:%M') if ticket.created_at else '—' }}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center text-secondary py-3">Nenhum chamado recente.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+</div>
+
+<!-- Carrega Chart.js só se ainda não estiver presente -->
+<script>
+  if (typeof window.Chart === 'undefined') {
+    const s = document.createElement('script');
+    s.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.5/dist/chart.umd.min.js";
+    s.onload = () => window.__chartReady = true;
+    document.head.appendChild(s);
+  } else {
+    window.__chartReady = true;
+  }
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // espera o Chart.js carregar (caso tenha sido injetado acima)
+  const waitForChart = () => {
+    if (!window.__chartReady || typeof Chart === 'undefined') {
+      return setTimeout(waitForChart, 50);
+    }
+
+    // ===== Chamados (usa |tojson para não quebrar JS) =====
+    const chamadosData = JSON.parse('{{ [open_count, in_progress_count, closed_count] | tojson | safe }}');
+    const ctxChamados = document.getElementById('chartChamados');
+    if (ctxChamados) {
+      new Chart(ctxChamados, {
+        type: 'bar',
+        data: {
+          labels: ['Abertos', 'Em Andamento', 'Encerrados'],
+          datasets: [{
+            label: 'Qtd. Chamados',
+            data: chamadosData,
+            backgroundColor: ['#0d6efd', '#ffc107', '#198754'],
+            borderRadius: 8
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#ccc' }, grid: { display: false } },
+            y: { ticks: { color: '#ccc' }, grid: { color: '#333' } }
+          }
+        }
+      });
+    }
+
+    // ===== Prioridades =====
+    const prioridadesData = JSON.parse('{{ [high_priority, medium_priority, low_priority] | tojson | safe }}');
+    const ctxPrior = document.getElementById('chartPrioridades');
+    if (ctxPrior) {
+      new Chart(ctxPrior, {
+        type: 'doughnut',
+        data: {
+          labels: ['Alta', 'Média', 'Baixa'],
+          datasets: [{
+            data: prioridadesData,
+            backgroundColor: ['#dc3545', '#ffc107', '#6c757d'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          plugins: { legend: { position: 'bottom', labels: { color: '#ccc' } } },
+          cutout: '65%'
+        }
+      });
+    }
+  };
+
+  waitForChart();
+});
+</script>
+
+{% endblock %}

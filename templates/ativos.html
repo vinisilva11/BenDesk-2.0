@@ -1,0 +1,391 @@
+{% extends "base.html" %} {% block content %}
+<div class="container-fluid py-4">
+  <!-- Cabeçalho -->
+  <div class="container-fluid py-4">
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    
+    <!-- Título e botão Ver Todos -->
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+      <h3 class="fw-bold text-white mb-0">💻 Painel de Ativos</h3>
+      <a href="{{ url_for('lista_ativos') }}" 
+         class="btn btn-outline-info d-flex align-items-center gap-2">
+        <i data-lucide="list"></i> Ver Todos
+      </a>
+    </div>
+
+    <!-- Botão Novo Ativo -->
+    <button
+      class="btn btn-primary d-flex align-items-center gap-2"
+      data-bs-toggle="modal"
+      data-bs-target="#novoAtivoModal"
+    >
+      <i data-lucide="plus-circle"></i> Novo Ativo
+    </button>
+  </div>
+
+
+  <!-- Cards com números + gráficos -->
+  <div class="row g-4">
+    <div class="col-lg-4 col-md-6">
+      <div class="card p-4 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="fw-bold text-white mb-0">
+            <i data-lucide="layers" class="me-2"></i>Ativos por Tipo
+          </h6>
+          <span class="badge bg-primary fs-6 px-3 py-2"
+            >{{ ativos_por_tipo|length }}</span
+          >
+        </div>
+        <ul class="list-unstyled text-white small mb-3">
+          {% for tipo, qtd in ativos_por_tipo.items() %}
+          <li
+            class="d-flex justify-content-between border-bottom border-secondary py-1"
+          >
+            <span>{{ tipo }}</span><strong>{{ qtd }}</strong>
+          </li>
+          {% else %}
+          <li class="text-secondary">Nenhum ativo encontrado</li>
+          {% endfor %}
+        </ul>
+        <canvas id="chartTipo" height="150"></canvas>
+      </div>
+    </div>
+
+    <div class="col-lg-4 col-md-6">
+      <div class="card p-4 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="fw-bold text-white mb-0">
+            <i data-lucide="building" class="me-2"></i>Ativos por Centro de
+            Custo
+          </h6>
+          <span class="badge bg-info fs-6 px-3 py-2"
+            >{{ ativos_por_cc|length }}</span
+          >
+        </div>
+        <ul class="list-unstyled text-white small mb-3">
+          {% for cc, qtd in ativos_por_cc.items() %}
+          <li
+            class="d-flex justify-content-between border-bottom border-secondary py-1"
+          >
+            <span>{{ cc }}</span><strong>{{ qtd }}</strong>
+          </li>
+          {% else %}
+          <li class="text-secondary">Nenhum ativo encontrado</li>
+          {% endfor %}
+        </ul>
+        <canvas id="chartCC" height="150"></canvas>
+      </div>
+    </div>
+
+    <div class="col-lg-4 col-md-12">
+      <div class="card p-4 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="fw-bold text-white mb-0">
+            <i data-lucide="users" class="me-2"></i>Ativos por Departamento
+          </h6>
+          <span class="badge bg-success fs-6 px-3 py-2"
+            >{{ ativos_por_departamento|length }}</span
+          >
+        </div>
+        <ul class="list-unstyled text-white small mb-3">
+          {% for depto, qtd in ativos_por_departamento.items() %}
+          <li
+            class="d-flex justify-content-between border-bottom border-secondary py-1"
+          >
+            <span>{{ depto }}</span><strong>{{ qtd }}</strong>
+          </li>
+          {% else %}
+          <li class="text-secondary">Nenhum ativo encontrado</li>
+          {% endfor %}
+        </ul>
+        <canvas id="chartDepto" height="150"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lista de Ativos -->
+  <div class="card bg-dark border-0 shadow-lg p-4 mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold text-white mb-0">
+        <i data-lucide="list"></i> Lista de Ativos
+      </h5>
+      <button
+        class="btn btn-outline-light btn-sm"
+        onclick="window.location.reload()"
+      >
+        <i data-lucide="refresh-ccw"></i> Atualizar
+      </button>
+    </div>
+
+    <div class="table-responsive">
+      <table
+        class="table table-dark table-hover align-middle rounded-3 overflow-hidden"
+      >
+        <thead class="bg-black bg-opacity-50">
+          <tr class="text-secondary small text-uppercase">
+            <th>ID</th>
+            <th>Tipo</th>
+            <th>Marca</th>
+            <th>Modelo</th>
+            <th>Status</th>
+            <th>Usuário</th>
+            <th>Centro de Custo</th>
+            <th>Aquisição</th>
+            <th class="text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ativo in ativos %}
+          <tr>
+            <td>{{ ativo.id }}</td>
+            <td>{{ ativo.tipo_nome or ativo.asset_type }}</td>
+            <td>{{ ativo.brand or '—' }}</td>
+            <td>{{ ativo.model or '—' }}</td>
+            <td>
+              {% if ativo.status == 'Disponível' %}
+              <span class="badge bg-success">Disponível</span>
+              {% elif ativo.status == 'Alugado' %}
+              <span class="badge bg-info text-dark">Alugado</span>
+              {% elif ativo.status == 'Em Manutenção' %}
+              <span class="badge bg-warning text-dark">Manutenção</span>
+              {% else %}
+              <span class="badge bg-secondary">N/A</span>
+              {% endif %}
+            </td>
+            <td>{{ ativo.first_name }} {{ ativo.last_name }}</td>
+            <td>{{ ativo.cc_nome or '—' }}</td>
+            <td>
+              {{ ativo.acquisition_date.strftime('%d/%m/%Y') if
+              ativo.acquisition_date else '—' }}
+            </td>
+            <td class="text-center">
+              <button
+                class="btn btn-sm btn-outline-info"
+                data-bs-toggle="modal"
+                data-bs-target="#viewAtivo{{ ativo.id }}"
+              >
+                <i data-lucide="eye"></i>
+              </button>
+              <button
+                class="btn btn-sm btn-outline-warning"
+                data-bs-toggle="modal"
+                data-bs-target="#editAtivo{{ ativo.id }}"
+              >
+                <i data-lucide="edit"></i>
+              </button>
+              <button
+                class="btn btn-sm btn-outline-danger"
+                data-bs-toggle="modal"
+                data-bs-target="#deleteAtivo{{ ativo.id }}"
+              >
+                <i data-lucide="trash-2"></i>
+              </button>
+            </td>
+          </tr>
+
+          <!-- Inclui os modais de cada ativo -->
+          {% include 'modais/view_ativo.html' %} {% include
+          'modais/edit_ativo.html' %} {% include 'modais/delete_ativo.html' %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Novo Ativo -->
+{% include 'modais/novo_ativo.html' %}
+
+<script>
+  // === Inicializa ícones Lucide uma única vez ===
+  document.addEventListener("DOMContentLoaded", () => {
+    lucide.createIcons();
+  });
+
+  // ✨ Fade-in leve dos modais (anima rápido sem travar)
+  (function injectModalFade() {
+    const style = document.createElement("style");
+    style.textContent = `
+      .modal.fade .modal-dialog{
+        opacity:.0; transform:translateY(-8px);
+        transition:opacity .12s ease-out, transform .12s ease-out;
+      }
+      .modal.show .modal-dialog{
+        opacity:1; transform:translateY(0);
+      }`;
+    document.head.appendChild(style);
+  })();
+
+  // === Dados dos gráficos vindos do servidor ===
+  const ativosTipoData  = JSON.parse('{{ ativos_por_tipo | tojson | safe }}');
+  const ativosCCData    = JSON.parse('{{ ativos_por_cc | tojson | safe }}');
+  const ativosDeptoData = JSON.parse('{{ ativos_por_departamento | tojson | safe }}');
+
+  let chartTipo, chartCC, chartDepto;
+
+  function criarGraficos() {
+    [chartTipo, chartCC, chartDepto].forEach(c => c && c.destroy());
+    const fadeAnim = { duration: 800, easing: 'easeInOutQuad' };
+
+    chartTipo = new Chart(document.getElementById('chartTipo'), {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(ativosTipoData),
+        datasets: [{ data: Object.values(ativosTipoData),
+          backgroundColor: ['#0d6efd','#6610f2','#198754','#ffc107','#dc3545'],
+          borderWidth: 0 }]
+      },
+      options: { plugins:{ legend:{ position:'bottom', labels:{ color:'#ccc' } } }, cutout:'65%', animation: fadeAnim }
+    });
+
+    chartCC = new Chart(document.getElementById('chartCC'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(ativosCCData),
+        datasets: [{ data: Object.values(ativosCCData), backgroundColor:'#0dcaf0', borderRadius:6 }]
+      },
+      options: { plugins:{ legend:{ display:false } },
+        scales:{ x:{ ticks:{ color:'#ccc' } }, y:{ ticks:{ color:'#ccc' } } },
+        animation: fadeAnim }
+    });
+
+    chartDepto = new Chart(document.getElementById('chartDepto'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(ativosDeptoData),
+        datasets: [{ data: Object.values(ativosDeptoData),
+          backgroundColor: ['#198754','#ffc107','#dc3545'], borderRadius:6 }]
+      },
+      options: { plugins:{ legend:{ display:false } },
+        scales:{ x:{ ticks:{ color:'#ccc' } }, y:{ ticks:{ color:'#ccc' } } },
+        animation: fadeAnim }
+    });
+  }
+  criarGraficos();
+
+  // === Toast de sucesso reutilizável ===
+  const toastEl = document.createElement('div');
+  toastEl.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-4';
+  toastEl.role = 'alert';
+  toastEl.innerHTML = `
+    <div class="d-flex">
+      <div class="toast-body fw-semibold">✅ Ação concluída com sucesso!</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>`;
+  document.body.appendChild(toastEl);
+  const toast = new bootstrap.Toast(toastEl);
+
+  // === CADASTRAR NOVO ATIVO (AJAX, sem cair em tela JSON) ===
+  document.addEventListener('submit', async (e) => {
+    if (!e.target.matches('#novoAtivoModal form')) return;
+    e.preventDefault();
+
+    const form = e.target;
+    const btn  = form.querySelector('button[type="submit"]');
+    const original = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Salvando...`;
+
+    try {
+      const resp = await fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+
+      // Qualquer 2xx: fecha modal, mostra toast e recarrega
+      if (resp.ok) {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('novoAtivoModal'));
+        if (modal) modal.hide();
+        form.reset();
+        toast.show();
+        setTimeout(() => window.location.reload(), 900);
+      } else {
+        const data = await safeJson(resp);
+        alert(`❌ Erro ao salvar: ${data?.error || resp.statusText}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('❌ Erro inesperado ao salvar o ativo.');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = original;
+    }
+  });
+
+  // === EDITAR ATIVO (AJAX) ===
+  document.addEventListener('submit', async (e) => {
+    if (!e.target.matches('.editAtivoForm')) return;
+    e.preventDefault();
+
+    const form = e.target;
+    const btn  = form.querySelector('button[type="submit"]');
+    const original = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Salvando...`;
+
+    try {
+      const resp = await fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      const data = await safeJson(resp);
+
+      if (resp.ok && data?.success) {
+        const modal = bootstrap.Modal.getInstance(form.closest('.modal'));
+        if (modal) modal.hide();
+        toast.show();
+        setTimeout(() => window.location.reload(), 900);
+      } else {
+        alert(`❌ Erro ao atualizar: ${data?.error || resp.statusText}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('❌ Erro inesperado ao editar ativo.');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = original;
+    }
+  });
+
+  // === EXCLUIR ATIVO (AJAX) ===
+  // IMPORTANTE: o link de confirmação no modal deve ter a classe .confirm-delete
+  document.addEventListener('click', async (e) => {
+    const link = e.target.closest('.confirm-delete');
+    if (!link) return;
+
+    e.preventDefault();
+    const url = link.getAttribute('href');
+    if (!url) return;
+
+    const modalEl = link.closest('.modal');
+    const modal   = modalEl ? bootstrap.Modal.getInstance(modalEl) : null;
+
+    try {
+      const resp = await fetch(url, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      const data = await safeJson(resp);
+
+      if (resp.ok && (data?.success || resp.redirected || resp.status === 200)) {
+        if (modal) modal.hide();
+        toast.show();
+        setTimeout(() => window.location.reload(), 900);
+      } else {
+        alert(`❌ Erro ao excluir: ${data?.error || resp.statusText}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('❌ Erro inesperado ao excluir ativo.');
+    }
+  });
+
+  // === Utilitário: tenta parsear JSON sem quebrar quando vier HTML/redirect ===
+  async function safeJson(resp) {
+    try { return await resp.clone().json(); } catch { return null; }
+  }
+</script>
+
+{% endblock %}

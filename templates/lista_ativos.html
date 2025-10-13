@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid py-4">
+
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold text-white">📋 Lista de Ativos</h3>
+    <a href="{{ url_for('ativos') }}" class="btn btn-outline-light d-flex align-items-center gap-2">
+      <i data-lucide="arrow-left"></i> Voltar ao Painel
+    </a>
+  </div>
+
+  <!-- Filtros -->
+  <form method="get" class="row g-3 mb-4">
+    <div class="col-md-4">
+      <label class="form-label text-secondary small">Tipo de Ativo</label>
+      <select class="form-select bg-dark text-light border-secondary" name="tipo">
+        <option value="">Todos</option>
+        {% for tipo_nome, tipo_label in tipos.items() %}
+        <option value="{{ tipo_nome }}" {% if filtro_tipo == tipo_nome %}selected{% endif %}>
+          {{ tipo_label }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label text-secondary small">Status</label>
+      <select class="form-select bg-dark text-light border-secondary" name="status">
+        <option value="">Todos</option>
+        <option value="Disponível" {% if filtro_status == 'Disponível' %}selected{% endif %}>Disponível</option>
+        <option value="Alugado" {% if filtro_status == 'Alugado' %}selected{% endif %}>Alugado</option>
+        <option value="Em Manutenção" {% if filtro_status == 'Em Manutenção' %}selected{% endif %}>Em Manutenção</option>
+      </select>
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label text-secondary small">Centro de Custo</label>
+      <select class="form-select bg-dark text-light border-secondary" name="cc">
+        <option value="">Todos</option>
+        {% for id, nome in centros.items() %}
+        <option value="{{ id }}" {% if filtro_cc == id|string %}selected{% endif %}>
+          {{ nome }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-12 d-flex justify-content-end">
+      <button class="btn btn-primary me-2" type="submit">
+        <i data-lucide="filter"></i> Filtrar
+      </button>
+      <a href="{{ url_for('lista_ativos') }}" class="btn btn-outline-light">
+        <i data-lucide="refresh-ccw"></i> Limpar
+      </a>
+    </div>
+  </form>
+
+  <!-- Tabela -->
+  <div class="table-responsive">
+    <table class="table table-dark table-hover align-middle rounded-3 overflow-hidden shadow-sm">
+      <thead class="bg-black bg-opacity-50">
+        <tr class="text-secondary text-uppercase small">
+          <th>ID</th>
+          <th>Tipo</th>
+          <th>Marca</th>
+          <th>Modelo</th>
+          <th>Nº de Série</th>
+          <th>Usuário</th>
+          <th>Centro de Custo</th>
+          <th>Status</th>
+          <th>Localização</th>
+          <th>Data Aquisição</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ativo in ativos %}
+        <tr>
+          <td class="fw-semibold text-white">{{ ativo.id }}</td>
+          <td>{{ ativo.asset_type or '—' }}</td>
+          <td>{{ ativo.brand or '—' }}</td>
+          <td>{{ ativo.model or '—' }}</td>
+          <td>{{ ativo.serial_number or '—' }}</td>
+          <td>
+            {% if ativo.device_user_id and ativo.device_user_id in usuarios %}
+              {{ usuarios[ativo.device_user_id] }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td>
+            {% if ativo.cost_center_id and ativo.cost_center_id in centros %}
+              {{ centros[ativo.cost_center_id] }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td>
+            {% if ativo.status == 'Disponível' %}
+              <span class="badge bg-success">{{ ativo.status }}</span>
+            {% elif ativo.status == 'Alugado' %}
+              <span class="badge bg-warning text-dark">{{ ativo.status }}</span>
+            {% elif ativo.status == 'Em Manutenção' %}
+              <span class="badge bg-danger">{{ ativo.status }}</span>
+            {% else %}
+              <span class="badge bg-secondary">{{ ativo.status or '—' }}</span>
+            {% endif %}
+          </td>
+          <td>{{ ativo.location or '—' }}</td>
+          <td>{{ ativo.acquisition_date.strftime('%d/%m/%Y') if ativo.acquisition_date else '—' }}</td>
+          <td>
+            <div class="d-flex gap-2">
+              <a href="#" class="btn btn-sm btn-outline-info"><i data-lucide="eye"></i></a>
+              <a href="#" class="btn btn-sm btn-outline-warning"><i data-lucide="edit"></i></a>
+              <a href="#" class="btn btn-sm btn-outline-danger"><i data-lucide="trash-2"></i></a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="11" class="text-center text-secondary py-4">Nenhum ativo encontrado.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+  .table-dark td, .table-dark th {
+    color: #f8f9fa;
+  }
+  .badge { font-size: 0.75rem; padding: 6px 10px; }
+  .btn-outline-info:hover { background-color: #0dcaf0; color: #000; }
+  .btn-outline-warning:hover { background-color: #ffc107; color: #000; }
+  .btn-outline-danger:hover { background-color: #dc3545; color: #fff; }
+</style>
+
+<script>
+  lucide.createIcons();
+</script>
+
+{% endblock %}

@@ -1,0 +1,28 @@
+<div class="modal fade" id="viewItem{{ item.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content bg-dark text-white border-0 shadow-lg">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title"><i data-lucide="eye"></i> Detalhes do Item</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <ul class="list-unstyled mb-0 small">
+          <li><strong>Nome:</strong> {{ item.nome }}</li>
+          <li><strong>Categoria:</strong> {{ item.categoria or '—' }}</li>
+          <li><strong>Unidade:</strong> {{ item.unidade or '—' }}</li>
+          <li><strong>Quantidade:</strong> {{ item.quantidade }}</li>
+          <li><strong>Status:</strong> {{ item.status or '—' }}</li>
+          <li><strong>Última Movimentação:</strong>
+            {% set mov = item.movimentacoes|sort(attribute='timestamp', reverse=True)|first %}
+            {{ mov.timestamp.strftime('%d/%m/%Y %H:%M') if mov else '—' }}
+          </li>
+        </ul>
+      </div>
+
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>

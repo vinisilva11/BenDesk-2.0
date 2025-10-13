@@ -1,0 +1,58 @@
+<!-- Modal Visualizar Ativo -->
+<div class="modal fade" id="viewAtivo{{ ativo.id }}" tabindex="-1" aria-labelledby="viewAtivoLabel{{ ativo.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content bg-dark text-light border-0 rounded-4 shadow-lg">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title fw-bold" id="viewAtivoLabel{{ ativo.id }}">
+          👁️ Visualizar Ativo
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label text-secondary small">Tipo</label>
+            <input type="text" class="form-control bg-black text-light border-secondary" value="{{ ativo.asset_type }}" readonly>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small">Marca</label>
+            <input type="text" class="form-control bg-black text-light border-secondary" value="{{ ativo.brand }}" readonly>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small">Modelo</label>
+            <input type="text" class="form-control bg-black text-light border-secondary" value="{{ ativo.model }}" readonly>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small">Número de Série</label>
+            <input type="text" class="form-control bg-black text-light border-secondary" value="{{ ativo.serial_number }}" readonly>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small">Status</label>
+            <input type="text" class="form-control bg-black text-light border-secondary" value="{{ ativo.status }}" readonly>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small">Usuário</label>
+            <input type="text" class="form-control bg-black text-light border-secondary" value="{{ ativo.first_name }} {{ ativo.last_name }}" readonly>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small">Centro de Custo</label>
+            <input type="text" class="form-control bg-black text-light border-secondary" value="{{ ativo.cc_nome }}" readonly>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small">Data de Aquisição</label>
+            <input type="text" class="form-control bg-black text-light border-secondary" value="{{ ativo.acquisition_date.strftime('%d/%m/%Y') if ativo.acquisition_date else '—' }}" readonly>
+          </div>
+          <div class="col-12">
+            <label class="form-label text-secondary small">Observações</label>
+            <textarea class="form-control bg-black text-light border-secondary" rows="3" readonly>{{ ativo.notes or 'Sem observações.' }}</textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
