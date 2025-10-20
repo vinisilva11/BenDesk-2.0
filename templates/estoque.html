@@ -5,62 +5,50 @@
 
   <!-- Cabeçalho -->
   <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <h3 class="fw-bold text-white mb-0">📦 Painel de Estoque</h3>
+    <h3 class="fw-bold text-white mb-0">📦 Controle de Estoque</h3>
     <div class="d-flex flex-wrap gap-2">
 
-      <!-- ✅ Novo Item -->
-      <!-- <button class="btn btn-primary d-flex align-items-center gap-2"
+      <!-- ✅ Entrada (único botão para cadastrar item) -->
+      <button type="button"
+              class="btn btn-success d-flex align-items-center gap-2"
               data-bs-toggle="modal"
-              data-bs-target="#novoItemModal">
-        <i data-lucide="plus-circle"></i> Novo Item
-      </button> -->
-
-      <!-- ✅ Entrada -->
-      <a href="{{ url_for('estoque.novo_material') }}"
-         class="btn btn-success d-flex align-items-center gap-2">
+              data-bs-target="#entradaModal">
         <i data-lucide="arrow-down-circle"></i> Entrada
-      </a>
+      </button>
+
 
       <!-- ✅ Saída -->
-      <a href="{{ url_for('estoque.saida_estoque') }}"
-         class="btn btn-warning d-flex align-items-center gap-2 text-dark">
+      <button type="button"
+              class="btn btn-warning d-flex align-items-center gap-2 text-dark"
+              data-bs-toggle="modal"
+              data-bs-target="#saidaItemModal">
         <i data-lucide="arrow-up-circle"></i> Saída
-      </a>
+      </button>
 
       <!-- ✅ Histórico -->
-      <a href="{{ url_for('estoque.historico_estoque') }}"
-         class="btn btn-outline-light d-flex align-items-center gap-2">
+      <a href="#historicoSection" class="btn btn-outline-light d-flex align-items-center gap-2">
         <i data-lucide="clock-history"></i> Histórico
       </a>
 
-      <!-- ✅ Ver Todos -->
-      <a href="{{ url_for('estoque.lista_estoque') }}"
-         class="btn btn-outline-info d-flex align-items-center gap-2">
-        <i data-lucide="list"></i> Ver Todos
+      <!-- ✅ Ver Itens -->
+      <a href="{{ url_for('estoque.lista_estoque') }}" class="btn btn-outline-info d-flex align-items-center gap-2">
+        <i data-lucide="list"></i> Ver Itens
       </a>
     </div>
   </div>
 
-  <!-- Cards de resumo -->
-  <div class="row g-4 mb-4">
-    <div class="col-md-4">
-      <div class="card p-4 h-100 border-0 shadow-sm bg-dark text-white">
-        <h6 class="fw-bold mb-2"><i data-lucide="archive"></i> Total de Itens</h6>
-        <h2 class="fw-bold text-primary">{{ itens|length }}</h2>
-        <small class="text-secondary">Itens registrados no sistema</small>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="card p-4 h-100 border-0 shadow-sm bg-dark text-white">
+  <!-- Indicadores -->
+  <div class="row g-4 mb-4 text-center justify-content-center">
+    <div class="col-md-4 col-lg-3">
+      <div class="card p-4 h-100 border-0 shadow-sm bg-dark text-white rounded-4">
         <h6 class="fw-bold mb-2"><i data-lucide="download"></i> Entradas</h6>
         <h2 class="fw-bold text-success">{{ entradas or 0 }}</h2>
         <small class="text-secondary">Movimentações de entrada</small>
       </div>
     </div>
 
-    <div class="col-md-4">
-      <div class="card p-4 h-100 border-0 shadow-sm bg-dark text-white">
+    <div class="col-md-4 col-lg-3">
+      <div class="card p-4 h-100 border-0 shadow-sm bg-dark text-white rounded-4">
         <h6 class="fw-bold mb-2"><i data-lucide="upload"></i> Saídas</h6>
         <h2 class="fw-bold text-danger">{{ saidas or 0 }}</h2>
         <small class="text-secondary">Movimentações de saída</small>
@@ -68,102 +56,188 @@
     </div>
   </div>
 
-  <!-- Gráfico -->
-  <div class="card bg-dark border-0 shadow-lg p-4 mb-5">
+  <!-- Histórico de Movimentações -->
+  <div id="historicoSection" class="card bg-dark border-0 shadow-lg p-4 mt-4">
     <h5 class="fw-bold text-white mb-3">
-      <i data-lucide="pie-chart"></i> Distribuição por Categoria
+      <i data-lucide="clock-history"></i> Histórico de Movimentações
     </h5>
-    <canvas id="chartCategorias" height="140"></canvas>
-  </div>
 
-  <!-- Tabela resumida -->
-  <div class="card bg-dark border-0 shadow-lg p-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="fw-bold text-white mb-0">
-        <i data-lucide="list"></i> Itens Recentes
-      </h5>
-      <a href="{{ url_for('estoque.lista_estoque') }}" class="btn btn-sm btn-outline-info">
-        <i data-lucide="arrow-right"></i> Ver Lista Completa
-      </a>
+    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+      <table class="table table-dark table-hover align-middle rounded-3 overflow-hidden">
+        <thead class="bg-black bg-opacity-50 sticky-top">
+          <tr class="text-secondary small text-uppercase">
+            <th>ID</th>
+            <th>Tipo</th>
+            <th>Item</th>
+            <th>Quantidade</th>
+            <th>Descrição</th>
+            <th>Usuário</th>
+            <th>Data</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for mov in historico %}
+          <tr>
+            <td>{{ mov.id }}</td>
+            <td>
+              {% if mov.tipo == 'entrada' %}
+                <span class="badge bg-success">Entrada</span>
+              {% else %}
+                <span class="badge bg-danger">Saída</span>
+              {% endif %}
+            </td>
+            <td>{{ mov.item.nome if mov.item else '—' }}</td>
+            <td>{{ mov.quantidade }}</td>
+            <td>{{ mov.descricao or '—' }}</td>
+            <td>{{ mov.usuario or '—' }}</td>
+            <td>{{ mov.timestamp.strftime('%d/%m/%Y %H:%M') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-
-    <div class="table-responsive">
-  <table class="table table-dark table-hover align-middle rounded-3 overflow-hidden">
-    <thead class="bg-black bg-opacity-50">
-      <tr class="text-secondary small text-uppercase">
-        <th>ID</th>
-        <th>Nome</th>
-        <th>Categoria</th>
-        <th>Unidade</th>
-        <th>Qtd</th>
-        <th>Status</th>
-        <th>Última Movimentação</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in itens %}
-      <tr>
-        <td>{{ item.id }}</td>
-        <td>{{ item.nome }}</td>
-        <td>{{ item.categoria or '—' }}</td>
-        <td>{{ item.unidade or '—' }}</td>
-        <td>{{ item.quantidade }}</td>
-        <td>
-          {% if item.status == 'Disponível' %}
-            <span class="badge bg-success">{{ item.status }}</span>
-          {% elif item.status == 'Reservado' %}
-            <span class="badge bg-warning text-dark">{{ item.status }}</span>
-          {% elif item.status == 'Baixo Estoque' %}
-            <span class="badge bg-danger">{{ item.status }}</span>
-          {% else %}
-            <span class="badge bg-secondary">—</span>
-          {% endif %}
-        </td>
-        <td>
-          {% set mov = item.movimentacoes|sort(attribute='timestamp', reverse=True)|first %}
-          {{ mov.timestamp.strftime('%d/%m/%Y %H:%M') if mov else '—' }}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-    {% if not itens %}
-    <div class="text-center text-secondary py-4">Nenhum item cadastrado no estoque.</div>
-    {% endif %}
   </div>
 </div>
 
-<!-- Modal Novo Item -->
-{% include 'modais/novo_item.html' %}
+
+<!-- ✅ Modal Cadastrar Item -->
+<div class="modal fade" id="entradaModal" tabindex="-1" aria-labelledby="entradaModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content bg-dark text-white border-0 shadow-lg">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title" id="entradaModalLabel">➕ Cadastrar Novo Item</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('estoque.novo_material') }}">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small text-secondary">Nome do Material</label>
+              <input type="text" name="nome" class="form-control bg-black text-white border-secondary" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small text-secondary">Categoria</label>
+              <select name="categoria" class="form-select bg-dark text-light border-secondary" required>
+                <option value="">Selecione</option>
+                <option value="Periféricos">Periféricos</option>
+                <option value="Acessórios de Computador">Acessórios de Computador</option>
+                <option value="Armazenamento">Armazenamento</option>
+                <option value="Redes e Conectividade">Redes e Conectividade</option>
+                <option value="Energia">Energia</option>
+                <option value="Impressão">Impressão</option>
+                <option value="Computadores e Notebooks">Computadores e Notebooks</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small text-secondary">Unidade</label>
+              <select name="unidade" class="form-select bg-dark text-light border-secondary">
+                <option value="Unidade">Unidade</option>
+                <option value="Caixa">Caixa</option>
+                <option value="Kit">Kit</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small text-secondary">Quantidade</label>
+              <input type="number" step="0.01" name="quantidade" class="form-control bg-black text-white border-secondary" required>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label small text-secondary">Observações</label>
+              <textarea name="observacoes" class="form-control bg-black text-white border-secondary" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Modal Entrada -->
+<div class="modal fade" id="entradaItemModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content bg-dark text-white border-0 shadow-lg">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Registrar Entrada</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('estoque.novo_material') }}">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small text-secondary">Nome do Material</label>
+              <input type="text" name="nome" class="form-control bg-black text-white border-secondary" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small text-secondary">Categoria</label>
+              <input type="text" name="categoria" class="form-control bg-black text-white border-secondary">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small text-secondary">Quantidade</label>
+              <input type="number" step="0.01" name="quantidade" class="form-control bg-black text-white border-secondary" required>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label small text-secondary">Observações</label>
+              <textarea name="observacoes" class="form-control bg-black text-white border-secondary" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success">Registrar Entrada</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Modal Saída -->
+<div class="modal fade" id="saidaItemModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content bg-dark text-white border-0 shadow-lg">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Registrar Saída</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('estoque.saida_estoque') }}">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small text-secondary">Item</label>
+              <select name="item_id" class="form-select bg-dark text-light border-secondary" required>
+                <option value="">Selecione</option>
+                {% for item in itens %}
+                <option value="{{ item.id }}">{{ item.nome }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small text-secondary">Quantidade</label>
+              <input type="number" step="0.01" name="quantidade" class="form-control bg-black text-white border-secondary" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small text-secondary">Responsável</label>
+              <input type="text" name="responsavel" class="form-control bg-black text-white border-secondary" required>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label small text-secondary">Observações</label>
+              <textarea name="observacoes" class="form-control bg-black text-white border-secondary" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-warning text-dark">Registrar Saída</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 <script>
   lucide.createIcons();
-
-  // ✅ Protege o gráfico contra erro de JSON
-  const ctx = document.getElementById('chartCategorias');
-  const categoriasRaw = JSON.parse('{{ categorias_data | tojson | safe if categorias_data else "{}" }}');
-  const categoriasData = categoriasRaw || {};
-
-  if (Object.keys(categoriasData).length > 0) {
-    new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: Object.keys(categoriasData),
-        datasets: [{
-          data: Object.values(categoriasData),
-          backgroundColor: ['#0d6efd','#198754','#ffc107','#dc3545','#6f42c1'],
-          borderWidth: 0
-        }]
-      },
-      options: {
-        plugins: { legend: { position: 'bottom', labels: { color: '#ccc' } } },
-        cutout: '65%',
-        animation: { duration: 800, easing: 'easeInOutQuad' }
-      }
-    });
-  }
 </script>
 
 {% endblock %}

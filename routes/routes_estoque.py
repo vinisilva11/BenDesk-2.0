@@ -11,7 +11,7 @@ def estoque():
     # Busca todos os materiais
     materiais = EstoqueItem.query.order_by(EstoqueItem.nome).all()
 
-    # 🔹 Gera resumo por categoria
+    # Gera resumo por categoria
     categorias_data = {}
     for m in materiais:
         if m.categoria:
@@ -19,17 +19,23 @@ def estoque():
         else:
             categorias_data["Sem Categoria"] = categorias_data.get("Sem Categoria", 0) + 1
 
-    # 🔹 Contadores simples de movimentações
+    # Contadores simples de movimentações
     entradas = EstoqueMovimentacao.query.filter_by(tipo='entrada').count()
     saidas = EstoqueMovimentacao.query.filter_by(tipo='saida').count()
+
+    # Histórico (últimas 20 movimentações)
+    historico = EstoqueMovimentacao.query.order_by(EstoqueMovimentacao.timestamp.desc()).limit(20).all()
 
     return render_template(
         'estoque.html',
         itens=materiais,
         categorias_data=categorias_data,
         entradas=entradas,
-        saidas=saidas
+        saidas=saidas,
+        historico=historico  # 👈 passa o histórico pro HTML
     )
+
+
 
 
 # ➕ Cadastro de novo material
@@ -78,37 +84,39 @@ def novo_material():
 
 
 # ➖ Saída de material
-@estoque_bp.route('/estoque/saida', methods=['GET', 'POST'])
+@estoque_bp.route('/estoque/saida', methods=['POST'])
 @login_required
 def saida_estoque():
-    if request.method == 'POST':
-        item_id = request.form.get('item_id')
-        quantidade = float(request.form.get('quantidade') or 0)
-        responsavel = request.form.get('responsavel')
-        observacoes = request.form.get('observacoes')
+    item_id = request.form.get('item_id')
+    quantidade = float(request.form.get('quantidade') or 0)
+    responsavel = request.form.get('responsavel')
+    observacoes = request.form.get('observacoes')
 
-        item = EstoqueItem.query.get(item_id)
+    item = EstoqueItem.query.get(item_id)
 
-        if item and item.quantidade >= quantidade:
-            item.quantidade -= quantidade
+    if not item:
+        flash('⚠️ Erro: item não encontrado.', 'danger')
+        return redirect(url_for('estoque.estoque'))
 
-            movimento = EstoqueMovimentacao(
-                tipo='saida',
-                item_id=item.id,
-                quantidade=quantidade,
-                descricao=f"{observacoes or ''} (Responsável: {responsavel})",
-                usuario=current_user.username  # ✅ corrigido: antes estava 'user'
-            )
-            db.session.add(movimento)
-            db.session.commit()
+    if item.quantidade < quantidade:
+        flash('⚠️ Quantidade insuficiente em estoque.', 'danger')
+        return redirect(url_for('estoque.estoque'))
 
-            flash('✅ Saída registrada com sucesso!', 'success')
-            return redirect(url_for('estoque.estoque'))
-        else:
-            flash('⚠️ Erro: item não encontrado ou quantidade insuficiente.', 'danger')
+    # Atualiza o estoque
+    item.quantidade -= quantidade
 
-    itens = EstoqueItem.query.order_by(EstoqueItem.nome).all()
-    return render_template('saida_estoque.html', itens=itens)
+    movimento = EstoqueMovimentacao(
+        tipo='saida',
+        item_id=item.id,
+        quantidade=quantidade,
+        descricao=f"{observacoes or ''} (Responsável: {responsavel})",
+        usuario=current_user.username
+    )
+    db.session.add(movimento)
+    db.session.commit()
+
+    flash('✅ Saída registrada com sucesso!', 'success')
+    return redirect(url_for('estoque.estoque'))
 
 
 # 📜 Histórico de movimentações

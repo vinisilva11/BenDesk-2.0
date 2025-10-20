@@ -156,3 +156,126 @@ body {
     color: #fff; 
 }
 
+/* === PAINEL DE ESTOQUE === */
+
+body {
+  background-color: #121212;
+  color: #eaeaea;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Cabeçalho */
+h3.fw-bold.text-white {
+  letter-spacing: 0.5px;
+}
+
+.btn {
+  border-radius: 10px;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+/* Cards de resumo */
+.card.bg-dark {
+  background: linear-gradient(145deg, #181818, #0f0f0f);
+  border: 1px solid #2a2a2a;
+}
+
+.card.bg-dark:hover {
+  transform: translateY(-3px);
+  transition: 0.3s;
+  border-color: #0d6efd;
+}
+
+.card h6 {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.card h2 {
+  font-size: 2rem;
+  letter-spacing: 1px;
+}
+
+/* === Tabela de Itens Recentes === */
+.table-dark {
+  color: #eaeaea;
+}
+
+.table-dark th {
+  color: #9ca3af;
+  font-weight: 600;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.table-dark td {
+  border-top: 1px solid #1f1f1f;
+  vertical-align: middle;
+}
+
+.table-dark tr:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Badges de status */
+.badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 5px 8px;
+}
+
+.badge.bg-success {
+  background-color: #198754 !important;
+}
+
+.badge.bg-warning {
+  background-color: #ffc107 !important;
+  color: #000 !important;
+}
+
+.badge.bg-danger {
+  background-color: #dc3545 !important;
+}
+
+.badge.bg-secondary {
+  background-color: #6c757d !important;
+}
+
+/* Gráfico */
+#chartCategorias {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* === Botões Superiores === */
+.d-flex.gap-2 .btn-outline-info {
+  color: #0dcaf0;
+  border-color: #0dcaf0;
+}
+
+.d-flex.gap-2 .btn-outline-info:hover {
+  background-color: #0dcaf0;
+  color: #000;
+}
+
+.d-flex.gap-2 .btn-outline-light {
+  color: #fff;
+  border-color: #fff;
+}
+
+.d-flex.gap-2 .btn-outline-light:hover {
+  background-color: #fff;
+  color: #000;
+}
+
+/* Ajustes de espaçamento geral */
+.container-fluid.py-4 {
+  padding-bottom: 6rem !important;
+}
+

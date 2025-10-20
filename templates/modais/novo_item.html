@@ -2,48 +2,71 @@
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content bg-dark text-white border-0 shadow-lg">
       <div class="modal-header border-secondary">
-        <h5 class="modal-title"><i data-lucide="plus-circle"></i> Novo Item</h5>
+        <h5 class="modal-title"><i data-lucide="plus-circle"></i> Novo Item de Estoque</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
 
       <form action="{{ url_for('estoque.novo_material') }}" method="POST" class="p-3">
         <div class="modal-body">
           <div class="row g-3">
+
+            <!-- Nome -->
             <div class="col-md-6">
               <label class="form-label small text-secondary">Nome</label>
               <input type="text" name="nome" class="form-control bg-black text-white border-secondary" required>
             </div>
+
+            <!-- Categoria -->
             <div class="col-md-6">
-              <label class="form-label text-secondary small">Categoria</label>
-              <select name="categoria" class="form-select bg-dark text-light border-secondary">
-                <option value="">Selecione ou digite nova...</option>
-                {% for cat in categorias %}
-                  <option value="{{ cat }}">{{ cat }}</option>
-                {% endfor %}
+              <label class="form-label small text-secondary">Categoria</label>
+              <select name="categoria" class="form-select bg-dark text-light border-secondary" required>
+                <option value="">Selecione a categoria</option>
+                <option value="Periféricos">Periféricos</option>
+                <option value="Acessórios de Computador">Acessórios de Computador</option>
+                <option value="Armazenamento">Armazenamento</option>
+                <option value="Redes e Conectividade">Redes e Conectividade</option>
+                <option value="Componentes de Hardware">Componentes de Hardware</option>
+                <option value="Energia">Energia</option>
+                <option value="Impressão">Impressão</option>
+                <option value="Suprimentos de Limpeza e Manutenção">Suprimentos de Limpeza e Manutenção</option>
+                <option value="Equipamentos de Áudio">Equipamentos de Áudio</option>
+                <option value="Equipamentos de Vídeo">Equipamentos de Vídeo</option>
+                <option value="Computadores e Notebooks">Computadores e Notebooks</option>
               </select>
-
-            <small class="text-secondary">Digite nova categoria caso não esteja na lista:</small>
-            <input type="text" name="categoria_nova" class="form-control mt-2" placeholder="Nova categoria (opcional)">
-
             </div>
-            <div class="col-md-4">
-              <label class="form-label small text-secondary">Unidade</label>
-              <input type="text" name="unidade" class="form-control bg-black text-white border-secondary" placeholder="ex: un, cx, kg">
-            </div>
+
+            <!-- Quantidade -->
             <div class="col-md-4">
               <label class="form-label small text-secondary">Quantidade</label>
-              <input type="number" name="quantidade" step="0.01" class="form-control bg-black text-white border-secondary" required>
+              <input type="number" name="quantidade" step="0.01"
+                     class="form-control bg-black text-white border-secondary" required>
             </div>
+
+            <!-- Unidade -->
             <div class="col-md-4">
-              <label class="form-label small text-secondary">Observações</label>
-              <input type="text" name="observacoes" class="form-control bg-black text-white border-secondary">
+              <label class="form-label small text-secondary">Unid. Medida</label>
+              <select name="unidade" class="form-select bg-dark text-light border-secondary" required>
+                <option value="">Selecione</option>
+                <option value="Unidade">Unidade</option>
+                <option value="Caixa">Caixa</option>
+                <option value="Kit">Kit</option>
+                <option value="Peça">Peça</option>
+                <option value="Pacote">Pacote</option>
+              </select>
             </div>
+
+            <!-- Observações -->
+            <div class="col-md-12">
+              <label class="form-label small text-secondary">Observações</label>
+              <textarea name="observacoes" class="form-control bg-black text-white border-secondary" rows="2"></textarea>
+            </div>
+
           </div>
         </div>
 
         <div class="modal-footer border-secondary">
           <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Salvar</button>
+          <button type="submit" class="btn btn-primary">Salvar Item</button>
         </div>
       </form>
     </div>

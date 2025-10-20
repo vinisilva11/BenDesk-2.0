@@ -1,0 +1,47 @@
+<!-- Modal Novo Usuário -->
+<div class="modal fade" id="novoUsuarioModal" tabindex="-1" aria-labelledby="novoUsuarioModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content bg-dark text-white border-0 shadow-lg">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title" id="novoUsuarioModalLabel">
+          <i data-lucide="user-plus"></i> Novo Usuário de Dispositivo
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('novo_usuario_dispositivo') }}">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small text-secondary">Primeiro Nome</label>
+              <input type="text" name="first_name" class="form-control bg-black text-white border-secondary" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small text-secondary">Sobrenome</label>
+              <input type="text" name="last_name" class="form-control bg-black text-white border-secondary" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small text-secondary">E-mail</label>
+              <input type="email" name="email" class="form-control bg-black text-white border-secondary" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small text-secondary">Departamento</label>
+              <input type="text" name="department" class="form-control bg-black text-white border-secondary">
+            </div>
+            <div class="col-md-12">
+              <label class="form-label small text-secondary">Centro de Custo</label>
+              <select name="cost_center_id" class="form-select bg-dark text-light border-secondary">
+                {% for c in centros %}
+                <option value="{{ c.id }}">{{ c.code }} - {{ c.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

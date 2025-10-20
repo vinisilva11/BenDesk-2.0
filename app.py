@@ -1,46 +1,34 @@
-from flask import Flask, render_template, redirect, url_for, request, flash
+from flask import Flask, render_template, redirect, url_for, request, flash, send_from_directory, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models.models import db, User, Ticket, TicketHistory, TicketComment, TicketAttachment
-import os
-from werkzeug.utils import secure_filename
-from flask import send_from_directory
+from models.models import db, User, Ticket, TicketHistory, TicketComment, TicketAttachment, Asset, CostCenter, DeviceUser, AssetType, EstoqueMovimentacao
 from email_to_ticket import send_confirmation_email, send_update_email
-from flask import abort
+from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
-from sqlalchemy import func, text  # 👈 Adicionado text aqui
-# from config import Config # ✅ Importa direto o config_prod
-from config_dev import Config # ✅ Importa direto o config_dev
-from flask import render_template, request, redirect, url_for #para a tela de ativos
-from models.models import Asset, CostCenter, DeviceUser, AssetType, db #para a tela de ativos
-#✅ Inicio dos Import dos Blueprint**************************
-from routes.routes_avatar import avatar_bp   
-from routes.routes_estoque import estoque_bp
-from routes.routes_usuarios_dispositivo import usuarios_dispositivo_bp
-from models.models import EstoqueMovimentacao
-from flask import request
-from sqlalchemy import asc, desc
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
-#Final dos Import dos blueprint*******************************
+from sqlalchemy import func, text, asc, desc
+from config_dev import Config
+from routes.routes_ativos import bp_ativos
 
+# ✅ Criação da aplicação Flask
 app = Flask(__name__)
 app.config.from_object(Config)
 
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+# ✅ Inicializa o banco de dados
 db.init_app(app)
 
-#✅ Inicio dos Registros dos Blueprint**************************
+# ✅ Importa e registra os Blueprints após o app ser criado
+from routes.routes_avatar import avatar_bp   
+from routes.routes_estoque import estoque_bp
+from routes.routes_usuarios_dispositivo import usuarios_dispositivo_bp
+from routes.routes_ativos import bp_ativos
 
-#Blueprint do avatar
 app.register_blueprint(avatar_bp, url_prefix='/avatar')
-
-#Blueprint de estoque
 app.register_blueprint(estoque_bp)
-
-#Blueprint de usuarios de dispositivos
 app.register_blueprint(usuarios_dispositivo_bp)
+app.register_blueprint(bp_ativos)
 #Final dos registros do blueprint*******************************
 
 login_manager = LoginManager(app)

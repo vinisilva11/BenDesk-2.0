@@ -1,0 +1,25 @@
+<!-- Modal Novo Tipo de Dispositivo -->
+<div class="modal fade" id="novoTipoModal" tabindex="-1" aria-labelledby="novoTipoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border-0 shadow-lg">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title" id="novoTipoModalLabel">
+          <i data-lucide="plus-circle"></i> Novo Tipo de Dispositivo
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('novo_tipo_dispositivo') }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label small text-secondary">Nome do Tipo</label>
+            <input type="text" name="name" class="form-control bg-black text-white border-secondary" required>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
