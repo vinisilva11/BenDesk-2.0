@@ -42,124 +42,19 @@
             </button>
           </td>
         </tr>
-
-        <!-- Modal Editar -->
-        <div class="modal fade" id="editUsuario{{ u.id }}" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content bg-dark text-white border-0">
-              <form method="POST" action="{{ url_for('ativos.editar_usuario_dispositivo', id=u.id) }}">
-                <div class="modal-header border-secondary">
-                  <h5 class="modal-title">✏️ Editar Usuário</h5>
-                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                  <div class="row g-3">
-                    <div class="col-md-6">
-                      <label class="form-label small text-secondary">Nome</label>
-                      <input type="text" name="first_name" value="{{ u.first_name }}" class="form-control bg-black text-white" required>
-                    </div>
-                    <div class="col-md-6">
-                      <label class="form-label small text-secondary">Sobrenome</label>
-                      <input type="text" name="last_name" value="{{ u.last_name }}" class="form-control bg-black text-white">
-                    </div>
-                    <div class="col-md-6">
-                      <label class="form-label small text-secondary">E-mail</label>
-                      <input type="email" name="email" value="{{ u.email }}" class="form-control bg-black text-white">
-                    </div>
-                    <div class="col-md-6">
-                      <label class="form-label small text-secondary">Departamento</label>
-                      <input type="text" name="department" value="{{ u.department }}" class="form-control bg-black text-white">
-                    </div>
-                    <div class="col-md-12">
-                      <label class="form-label small text-secondary">Centro de Custo</label>
-                      <select name="cost_center_id" class="form-select bg-dark text-light">
-                        {% for c in centros %}
-                          <option value="{{ c.id }}" {% if c.id == u.cost_center_id %}selected{% endif %}>{{ c.code }} - {{ c.name }}</option>
-                        {% endfor %}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div class="modal-footer border-secondary">
-                  <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
-                  <button type="submit" class="btn btn-warning">Salvar</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        <!-- Modal Excluir -->
-        <div class="modal fade" id="deleteUsuario{{ u.id }}" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content bg-dark text-white border-0">
-              <form method="POST" action="{{ url_for('ativos.excluir_usuario_dispositivo', id=u.id) }}">
-                <div class="modal-header border-secondary">
-                  <h5 class="modal-title">🗑️ Confirmar Exclusão</h5>
-                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                  Tem certeza que deseja excluir o usuário <strong>{{ u.first_name }} {{ u.last_name }}</strong>?
-                </div>
-                <div class="modal-footer border-secondary">
-                  <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
-                  <button type="submit" class="btn btn-danger">Excluir</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-
         {% endfor %}
       </tbody>
     </table>
   </div>
 
+  <!-- Modais separados para evitar conflito -->
+  {% for u in usuarios %}
+    {% include 'modais/edit_usuario_modal.html' %}
+    {% include 'modais/delete_usuario_modal.html' %}
+  {% endfor %}
+
   <!-- Modal Novo Usuário -->
-  <div class="modal fade" id="novoUsuarioModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content bg-dark text-white border-0">
-        <form method="POST" action="{{ url_for('ativos.novo_usuario_dispositivo') }}">
-          <div class="modal-header border-secondary">
-            <h5 class="modal-title"><i data-lucide="plus-circle"></i> Novo Usuário</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label small text-secondary">Nome</label>
-                <input type="text" name="first_name" class="form-control bg-black text-white" required>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label small text-secondary">Sobrenome</label>
-                <input type="text" name="last_name" class="form-control bg-black text-white">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label small text-secondary">E-mail</label>
-                <input type="email" name="email" class="form-control bg-black text-white">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label small text-secondary">Departamento</label>
-                <input type="text" name="department" class="form-control bg-black text-white">
-              </div>
-              <div class="col-md-12">
-                <label class="form-label small text-secondary">Centro de Custo</label>
-                <select name="cost_center_id" class="form-select bg-dark text-light">
-                  {% for c in centros %}
-                    <option value="{{ c.id }}">{{ c.code }} - {{ c.name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer border-secondary">
-            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-success">Salvar</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+  {% include 'modais/novo_usuario_modal.html' %}
 
 </div>
 <script>lucide.createIcons();</script>

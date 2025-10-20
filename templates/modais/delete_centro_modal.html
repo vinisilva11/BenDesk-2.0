@@ -1,0 +1,19 @@
+<div class="modal fade" id="deleteCentro{{ c.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border-0">
+      <form method="POST" action="{{ url_for('ativos.excluir_centro_de_custo', id=c.id) }}">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title">🗑️ Confirmar Exclusão</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          Tem certeza que deseja excluir o centro de custo <strong>{{ c.code }} - {{ c.name }}</strong>?
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger">Excluir</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

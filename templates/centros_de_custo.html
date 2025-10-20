@@ -34,80 +34,17 @@
             </button>
           </td>
         </tr>
-
-        <!-- Modal Editar -->
-        <div class="modal fade" id="editCentro{{ c.id }}" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content bg-dark text-white border-0">
-              <form method="POST" action="{{ url_for('editar_centro_de_custo', id=c.id) }}">
-                <div class="modal-header border-secondary">
-                  <h5 class="modal-title">✏️ Editar Centro de Custo</h5>
-                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                  <label class="form-label small text-secondary">Código</label>
-                  <input type="text" name="code" value="{{ c.code }}" class="form-control bg-black text-white mb-3" required>
-                  <label class="form-label small text-secondary">Nome</label>
-                  <input type="text" name="name" value="{{ c.name }}" class="form-control bg-black text-white" required>
-                </div>
-                <div class="modal-footer border-secondary">
-                  <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
-                  <button type="submit" class="btn btn-warning">Salvar</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        <!-- Modal Excluir -->
-        <div class="modal fade" id="deleteCentro{{ c.id }}" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content bg-dark text-white border-0">
-              <form method="POST" action="{{ url_for('excluir_centro_de_custo', id=c.id) }}">
-                <div class="modal-header border-secondary">
-                  <h5 class="modal-title">🗑️ Confirmar Exclusão</h5>
-                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                  Tem certeza que deseja excluir o centro de custo <strong>{{ c.code }} - {{ c.name }}</strong>?
-                </div>
-                <div class="modal-footer border-secondary">
-                  <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
-                  <button type="submit" class="btn btn-danger">Excluir</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-
         {% endfor %}
       </tbody>
     </table>
   </div>
 
-  <!-- Modal Novo -->
-  <div class="modal fade" id="novoCentroModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content bg-dark text-white border-0">
-        <form method="POST" action="{{ url_for('novo_centro_de_custo') }}">
-          <div class="modal-header border-secondary">
-            <h5 class="modal-title"><i data-lucide="plus-circle"></i> Novo Centro de Custo</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <label class="form-label small text-secondary">Código</label>
-            <input type="text" name="code" class="form-control bg-black text-white mb-3" required>
-            <label class="form-label small text-secondary">Nome</label>
-            <input type="text" name="name" class="form-control bg-black text-white" required>
-          </div>
-          <div class="modal-footer border-secondary">
-            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-success">Salvar</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+  <!-- Modais -->
+  {% for c in centros %}
+    {% include 'modais/edit_centro_modal.html' %}
+    {% include 'modais/delete_centro_modal.html' %}
+  {% endfor %}
+  {% include 'modais/novo_centro_modal.html' %}
 
 </div>
 <script>lucide.createIcons();</script>

@@ -1,0 +1,28 @@
+<div class="modal fade" id="editCentro{{ c.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content bg-dark text-white border-0">
+      <form method="POST" action="{{ url_for('ativos.editar_centro_de_custo', id=c.id) }}">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title">✏️ Editar Centro de Custo</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small text-secondary">Código</label>
+              <input type="text" name="code" value="{{ c.code }}" class="form-control bg-black text-white" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small text-secondary">Nome</label>
+              <input type="text" name="name" value="{{ c.name }}" class="form-control bg-black text-white" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-warning">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

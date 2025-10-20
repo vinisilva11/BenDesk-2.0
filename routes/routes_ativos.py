@@ -62,14 +62,14 @@ def excluir_centro_de_custo(id):
     return redirect(url_for("ativos.centros_de_custo"))
 
 
-# ======================================================
-# 💻 TIPOS DE DISPOSITIVO - CADASTRAR /EDITAR / EXCLUIR
-# ======================================================
+# ========================================
+# 💻 TIPOS DE DISPOSITIVO
+# ========================================
 @bp_ativos.route("/tipos-dispositivo")
 @login_required
 def tipos_dispositivo():
     tipos = AssetType.query.order_by(AssetType.id.desc()).all()
-    return render_template("tipos_dispositivos.html", tipos=tipos)
+    return render_template("tipos_dispositivo.html", tipos=tipos)
 
 
 @bp_ativos.route("/tipos-dispositivo/novo", methods=["POST"])
@@ -88,32 +88,32 @@ def novo_tipo_dispositivo():
     flash("Tipo de dispositivo cadastrado com sucesso!", "success")
     return redirect(url_for("ativos.tipos_dispositivo"))
 
+
 @bp_ativos.route("/tipos-dispositivo/editar/<int:id>", methods=["POST"])
 @login_required
 def editar_tipo_dispositivo(id):
-    try:
-        tipo = AssetType.query.get_or_404(id)
-        tipo.name = request.form.get("name")
+    tipo = AssetType.query.get_or_404(id)
+    name = request.form.get("name")
 
-        db.session.commit()
-        flash("✅ Tipo de dispositivo atualizado com sucesso!", "success")
-    except Exception as e:
-        db.session.rollback()
-        flash(f"❌ Erro ao atualizar tipo de dispositivo: {e}", "danger")
+    if not name:
+        flash("O nome do tipo é obrigatório.", "danger")
+        return redirect(url_for("ativos.tipos_dispositivo"))
+
+    tipo.name = name
+    db.session.commit()
+
+    flash("Tipo de dispositivo atualizado com sucesso!", "success")
     return redirect(url_for("ativos.tipos_dispositivo"))
 
 
 @bp_ativos.route("/tipos-dispositivo/excluir/<int:id>", methods=["POST"])
 @login_required
 def excluir_tipo_dispositivo(id):
-    try:
-        tipo = AssetType.query.get_or_404(id)
-        db.session.delete(tipo)
-        db.session.commit()
-        flash("🗑️ Tipo de dispositivo excluído com sucesso!", "success")
-    except Exception as e:
-        db.session.rollback()
-        flash(f"❌ Erro ao excluir tipo de dispositivo: {e}", "danger")
+    tipo = AssetType.query.get_or_404(id)
+    db.session.delete(tipo)
+    db.session.commit()
+
+    flash(f"Tipo de dispositivo '{tipo.name}' excluído com sucesso!", "success")
     return redirect(url_for("ativos.tipos_dispositivo"))
 
 
