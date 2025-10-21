@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, text, asc, desc
 from config_dev import Config
 from routes.routes_ativos import bp_ativos
+import os
 
 # ✅ Criação da aplicação Flask
 app = Flask(__name__)
@@ -89,48 +90,83 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-@app.route('/tickets')
+
+@app.route('/new_ticket', methods=['GET', 'POST'])
 @login_required
-def tickets():
-    status_filter = request.args.get('status_filter')
-    responsavel_filter = request.args.get('responsavel_filter')
-    page = request.args.get('page', 1, type=int)
-    per_page = 10  # número de chamados por página
+def new_ticket():
+    if request.method == 'POST':
+        try:
+            title = request.form.get('title')
+            description = request.form.get('description')
+            priority = request.form.get('priority')
+            requester_name = request.form.get('requester_name')
+            requester_email = request.form.get('requester_email')
 
-    query = Ticket.query
+            # === Avatar automático com base no e-mail ===
+            email_prefix = requester_email.split('@')[0].lower() if requester_email else None
+            avatar_filename = None
 
-    # 🔹 Filtro por status
-    if status_filter == 'Aberto':
-        query = query.filter_by(status='Aberto')
-    elif status_filter == 'Em Andamento':
-        query = query.filter_by(status='Em Andamento')
-    elif status_filter == 'Fechados':
-        query = query.filter(Ticket.status.in_(['Encerrado', 'Cancelado']))
+            # Caminho base dos avatares
+            avatar_dir = os.path.join(app.static_folder, 'uploads', 'avatars')
 
-    # 🔹 Filtro por responsável
-    if responsavel_filter:
-        query = query.filter(Ticket.assigned_to.like(f"%{responsavel_filter}%"))
+            # Verifica se existe um avatar com o prefixo do e-mail
+            if email_prefix:
+                for ext in ['.jpg', '.jpeg', '.png']:
+                    possible_path = os.path.join(avatar_dir, f"{email_prefix}{ext}")
+                    if os.path.exists(possible_path):
+                        avatar_filename = f"{email_prefix}{ext}"
+                        break
 
-    # 🔹 Paginação
-    pagination = query.order_by(Ticket.id.asc()).paginate(page=page, per_page=per_page, error_out=False)
-    tickets = pagination.items
-    total_pages = pagination.pages
-    current_page = pagination.page
+            # Se não tiver imagem específica, usa o padrão
+            if not avatar_filename:
+                avatar_filename = 'default-avatar.png'
 
-    # 🔹 Mapeamento de usuários (para exibir nome completo)
-    users = {u.username: f"{u.first_name} {u.last_name}" for u in User.query.all()}
+            # === Criação do novo ticket ===
+            new_ticket = Ticket(
+                title=title,
+                description=description,
+                status='Aberto',
+                priority=priority,
+                requester_email=requester_email,
+                requester_name=requester_name,
+                avatar_path=avatar_filename
+            )
 
-    # 🔹 Envia tudo pro template
-    return render_template(
-        'tickets.html',
-        tickets=tickets,
-        users=users,
-        datetime=datetime,
-        timedelta=timedelta,
-        request=request,
-        total_pages=total_pages,
-        current_page=current_page
-    )
+            db.session.add(new_ticket)
+            db.session.commit()
+
+            # === Upload de arquivo, se existir ===
+            file = request.files.get('file')
+            if file and file.filename.strip():
+                filename = secure_filename(file.filename)
+                filepath = os.path.join(UPLOAD_FOLDER, filename)
+                file.save(filepath)
+
+                attachment = TicketAttachment(
+                    ticket_id=new_ticket.id,
+                    filename=filename,
+                    filepath=filepath
+                )
+                db.session.add(attachment)
+                db.session.commit()
+
+            # === Envia e-mail de confirmação ===
+            try:
+                send_confirmation_email(new_ticket, requester_email, requester_name)
+                flash('✅ Ticket criado com sucesso! E-mail de confirmação enviado.', 'success')
+            except Exception as e:
+                print(f"⚠️ Falha ao enviar e-mail: {e}")
+                flash('✅ Ticket criado com sucesso, mas o e-mail não pôde ser enviado.', 'warning')
+
+            return redirect(url_for('my_tickets'))
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"❌ Erro ao criar ticket: {e}")
+            flash('❌ Ocorreu um erro ao criar o ticket. Verifique os dados e tente novamente.', 'danger')
+            return redirect(url_for('new_ticket'))
+
+    return render_template('new_ticket.html')
 
 
 @app.route('/ticket/<int:ticket_id>', methods=['GET', 'POST'])
@@ -143,6 +179,7 @@ def view_ticket(ticket_id):
     attachments = TicketAttachment.query.filter_by(ticket_id=ticket.id).all()
 
     if request.method == 'POST':
+        # Upload de arquivo
         if 'file' in request.files and request.files['file'].filename != '':
             file = request.files['file']
             if file:
@@ -155,9 +192,10 @@ def view_ticket(ticket_id):
                     filepath=filepath
                 ))
                 db.session.commit()
-                flash('Arquivo anexado com sucesso!')
+                flash('📎 Arquivo anexado com sucesso!', 'success')
                 return redirect(url_for('view_ticket', ticket_id=ticket.id))
 
+        # Atualização de dados
         old_status = ticket.status
         old_priority = ticket.priority
         old_assigned = ticket.assigned_to or 'Não atribuído'
@@ -196,12 +234,14 @@ def view_ticket(ticket_id):
 
         db.session.commit()
 
+        # 🔹 Envio de e-mail e mensagens
         if (changes or comment_added) and new_status != 'Cancelado':
             body_msg = ""
             if changes:
                 body_msg += "🔄 Alterações:\n" + "\n".join(changes)
             if comment_added:
                 body_msg += f"\n\n💬 Comentário:\n\"{comment_text.strip()}\""
+
             send_update_email(
                 ticket,
                 ticket.requester_email,
@@ -209,9 +249,14 @@ def view_ticket(ticket_id):
                 "Ticket Atualizado",
                 body_msg
             )
-            flash('Alterações salvas e e-mail enviado!')
+
+            # ✅ Mensagens personalizadas conforme status
+            if new_status in ['Encerrado', 'Concluído', 'Fechado']:
+                flash('✅ Ticket concluído com sucesso!', 'success')
+            else:
+                flash('📝 Alterações salvas e e-mail enviado!', 'success')
         else:
-            flash('Alterações salvas!')
+            flash('📝 Alterações salvas!', 'success')
 
         return redirect(url_for('view_ticket', ticket_id=ticket.id))
 
@@ -224,80 +269,11 @@ def view_ticket(ticket_id):
         users=users
     )
 
+
 @app.route('/uploads/<path:filename>')
 @login_required
 def download_file(filename):
     return send_from_directory('uploads', filename)
-
-@app.route('/new_ticket', methods=['GET', 'POST'])
-@login_required
-def new_ticket():
-    if request.method == 'POST':
-        title = request.form.get('title')
-        description = request.form.get('description')
-        priority = request.form.get('priority')
-        requester_name = request.form.get('requester_name')
-        requester_email = request.form.get('requester_email')
-
-        # === Avatar automático com base no e-mail ===
-        email_prefix = requester_email.split('@')[0].lower() if requester_email else None
-        avatar_filename = None
-
-        # Caminho base dos avatares
-        avatar_dir = os.path.join(app.static_folder, 'uploads', 'avatars')
-
-        # Verifica se existe um avatar com o prefixo do e-mail
-        if email_prefix:
-            for ext in ['.jpg', '.jpeg', '.png']:
-                possible_path = os.path.join(avatar_dir, f"{email_prefix}{ext}")
-                if os.path.exists(possible_path):
-                    avatar_filename = f"{email_prefix}{ext}"
-                    break
-
-        # Se não tiver imagem específica, usa o padrão
-        if not avatar_filename:
-            avatar_filename = 'default-avatar.png'
-
-        # === Criação do novo ticket ===
-        new_ticket = Ticket(
-            title=title,
-            description=description,
-            status='Aberto',
-            priority=priority,
-            requester_email=requester_email,
-            requester_name=requester_name
-        )
-
-        new_ticket.avatar_path = avatar_filename
-
-        db.session.add(new_ticket)
-        db.session.commit()
-
-        # === Upload de arquivo, se existir ===
-        file = request.files.get('file')
-        if file and file.filename != '':
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(UPLOAD_FOLDER, filename)
-            file.save(filepath)
-
-            attachment = TicketAttachment(
-                ticket_id=new_ticket.id,
-                filename=filename,
-                filepath=filepath
-            )
-            db.session.add(attachment)
-            db.session.commit()
-
-        # === Envia e-mail de confirmação ===
-        try:
-            send_confirmation_email(new_ticket, requester_email, requester_name)
-        except Exception as e:
-            print(f"❌ Falha ao enviar e-mail de confirmação: {e}")
-
-        flash('Ticket criado com sucesso!')
-        return redirect(url_for('tickets'))
-
-    return render_template('new_ticket.html')
 
 
 @app.route('/users')
@@ -664,20 +640,49 @@ def novo_tipo_dispositivo():
 @app.route('/chamados')
 @login_required
 def chamados_painel():
-    # Contagens de status
+    # Contagens
     open_count = Ticket.query.filter_by(status='Aberto').count()
     in_progress_count = Ticket.query.filter_by(status='Em Andamento').count()
     closed_count = Ticket.query.filter_by(status='Encerrado').count()
 
-    # Contagens de prioridade
     high_priority = Ticket.query.filter_by(priority='Alta').count()
     medium_priority = Ticket.query.filter_by(priority='Média').count()
     low_priority = Ticket.query.filter_by(priority='Baixa').count()
 
-    # Últimos chamados
     last_tickets = Ticket.query.order_by(Ticket.created_at.desc()).limit(5).all()
 
-    # Cálculo do tempo médio de resolução
+    # 🧮 Cálculo do SLA (com tooltip)
+    for t in last_tickets:
+        if not t.created_at:
+            t.sla = {"texto": "N/A", "cor": "text-muted", "tooltip": "Sem dados"}
+            continue
+
+        diff = datetime.utcnow() - t.created_at
+        total_horas = diff.total_seconds() / 3600
+        dias = int(total_horas // 24)
+        horas = int(total_horas % 24)
+        sla_texto = f"{dias}d {horas}h"
+
+        if total_horas <= 4:
+            t.sla = {
+                "texto": sla_texto,
+                "cor": "text-success fw-bold",
+                "tooltip": "Dentro do SLA (até 4h)"
+            }  # 🟢 verde
+        elif total_horas <= 8:
+            t.sla = {
+                "texto": sla_texto,
+                "cor": "text-warning fw-bold",
+                "tooltip": "Atenção: entre 4h e 8h"
+            }  # 🟡 amarelo
+        else:
+            t.sla = {
+                "texto": sla_texto,
+                "cor": "text-danger fw-bold",
+                "tooltip": "Fora do SLA (mais de 8h)"
+            }  # 🔴 vermelho
+
+    # Tempo médio de resolução
     avg_resolution = db.session.query(
         func.avg(text("TIMESTAMPDIFF(MINUTE, tickets.created_at, tickets.updated_at)"))
     ).filter(Ticket.status == 'Encerrado').scalar()
@@ -699,7 +704,7 @@ def chamados_painel():
         medium_priority=medium_priority,
         low_priority=low_priority,
         avg_resolution=avg_time_text,
-        last_tickets=last_tickets  # 👈 nome igual ao usado no HTML
+        last_tickets=last_tickets
     )
 
 

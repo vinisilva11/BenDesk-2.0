@@ -4,7 +4,7 @@
 
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h3 class="fw-bold text-white">📊 Painel de Chamados</h3>
-    <a href="{{ url_for('tickets') }}" class="btn btn-outline-light">
+    <a href="{{ url_for('my_tickets') }}" class="btn btn-outline-light">
       <i data-lucide="list"></i> Ver Lista de Chamados
     </a>
   </div>
@@ -36,72 +36,77 @@
   <h5 class="fw-bold mb-3"><i data-lucide="clock" class="me-2"></i> Últimos Chamados</h5>
   <div class="table-responsive">
     <table class="table table-dark table-hover align-middle">
-      <thead>
-        <tr class="text-secondary text-uppercase small">
-          <th>ID</th>
-          <th>Título</th>
-          <th>Solicitante</th>
-          <th>Status</th>
-          <th>Prioridade</th>
-          <th>Data / Hora</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for ticket in last_tickets %}
-        <tr>
-          <td class="fw-semibold">{{ ticket.id }}</td>
-          <td>{{ ticket.title }}</td>
-          <td>
-            <div class="d-flex align-items-center gap-3">
-              {% if ticket.avatar_path %}
-                <img src="{{ url_for('static', filename='uploads/avatars/' + ticket.avatar_path) }}"
-                     alt="Avatar"
-                     class="rounded-circle"
-                     width="35"
-                     height="35"
-                     style="object-fit: cover; border: 2px solid rgba(255,255,255,0.15);">
-              {% else %}
-                <img src="{{ url_for('static', filename='img/default-avatar.png') }}"
-                     alt="Avatar"
-                     class="rounded-circle"
-                     width="35"
-                     height="35"
-                     style="opacity: 0.8; border: 2px solid rgba(255,255,255,0.1);">
-              {% endif %}
-              <div>
-                <div class="fw-semibold small text-white">{{ ticket.requester_name or '—' }}</div>
-                <div class="text-secondary small">{{ ticket.requester_email or '—' }}</div>
-              </div>
-            </div>
-          </td>
-          <td>
-            {% if ticket.status == 'Aberto' %}
-              <span class="badge bg-primary">{{ ticket.status }}</span>
-            {% elif ticket.status == 'Em Andamento' %}
-              <span class="badge bg-warning text-dark">{{ ticket.status }}</span>
-            {% else %}
-              <span class="badge bg-success">{{ ticket.status }}</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if ticket.priority == 'Alta' %}
-              <span class="badge bg-danger">{{ ticket.priority }}</span>
-            {% elif ticket.priority == 'Média' %}
-              <span class="badge bg-warning text-dark">{{ ticket.priority }}</span>
-            {% else %}
-              <span class="badge bg-secondary">{{ ticket.priority }}</span>
-            {% endif %}
-          </td>
-          <td class="text-secondary">
-            {{ ticket.created_at.strftime('%d/%m/%Y %H:%M') if ticket.created_at else '—' }}
-          </td>
-        </tr>
+     <thead>
+  <tr class="text-secondary text-uppercase small">
+    <th>ID</th>
+    <th>Título</th>
+    <th>Solicitante</th>
+    <th>Status</th>
+    <th>Prioridade</th>
+    <th>Data / Hora</th>
+    <th>SLA</th> <!-- ✅ nova coluna -->
+  </tr>
+</thead>
+<tbody>
+  {% for ticket in last_tickets %}
+  <tr>
+    <td class="fw-semibold">{{ ticket.id }}</td>
+    <td>{{ ticket.title }}</td>
+    <td>
+      <div class="d-flex align-items-center gap-3">
+        {% if ticket.avatar_path %}
+          <img src="{{ url_for('static', filename='uploads/avatars/' + ticket.avatar_path) }}"
+               alt="Avatar"
+               class="rounded-circle"
+               width="35"
+               height="35"
+               style="object-fit: cover; border: 2px solid rgba(255,255,255,0.15);">
         {% else %}
-        <tr>
-          <td colspan="6" class="text-center text-secondary py-3">Nenhum chamado recente.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
+          <img src="{{ url_for('static', filename='img/default-avatar.png') }}"
+               alt="Avatar"
+               class="rounded-circle"
+               width="35"
+               height="35"
+               style="opacity: 0.8; border: 2px solid rgba(255,255,255,0.1);">
+        {% endif %}
+        <div>
+          <div class="fw-semibold small text-white">{{ ticket.requester_name or '—' }}</div>
+          <div class="text-secondary small">{{ ticket.requester_email or '—' }}</div>
+        </div>
+      </div>
+    </td>
+    <td>
+      {% if ticket.status == 'Aberto' %}
+        <span class="badge bg-primary">{{ ticket.status }}</span>
+      {% elif ticket.status == 'Em Andamento' %}
+        <span class="badge bg-warning text-dark">{{ ticket.status }}</span>
+      {% else %}
+        <span class="badge bg-success">{{ ticket.status }}</span>
+      {% endif %}
+    </td>
+    <td>
+      {% if ticket.priority == 'Alta' %}
+        <span class="badge bg-danger">{{ ticket.priority }}</span>
+      {% elif ticket.priority == 'Média' %}
+        <span class="badge bg-warning text-dark">{{ ticket.priority }}</span>
+      {% else %}
+        <span class="badge bg-secondary">{{ ticket.priority }}</span>
+      {% endif %}
+    </td>
+    <td class="text-secondary">
+      {{ ticket.created_at.strftime('%d/%m/%Y %H:%M') if ticket.created_at else '—' }}
+    </td>
+    <td class="{{ ticket.sla.cor }}">
+      ⏱️ {{ ticket.sla.texto }}
+    </td> <!-- ✅ agora com cor dinâmica -->
+  </tr>
+  {% else %}
+  <tr>
+    <td colspan="7" class="text-center text-secondary py-3">Nenhum chamado recente.</td>
+  </tr>
+  {% endfor %}
+</tbody>
+
     </table>
   </div>
 </div>
