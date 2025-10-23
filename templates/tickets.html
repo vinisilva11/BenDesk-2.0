@@ -38,7 +38,7 @@
       <button class="btn btn-primary me-2" type="submit">
         <i data-lucide="filter"></i> Filtrar
       </button>
-      <a href="{{ url_for('tickets') }}" class="btn btn-outline-light">
+      <a href="{{ url_for('my_tickets') }}" class="btn btn-outline-light">
         <i data-lucide="refresh-ccw"></i> Limpar
       </a>
     </div>
@@ -56,6 +56,7 @@
           <th>Status</th>
           <th>Prioridade</th>
           <th>Ações</th>
+          <th>SLA</th>
         </tr>
       </thead>
       <tbody>
@@ -112,6 +113,11 @@
               <span class="badge bg-secondary">{{ ticket.priority }}</span>
             {% endif %}
           </td>
+          <td>
+              <span class="badge {{ ticket.sla.cor }}">{{ ticket.sla.texto }}</span>
+          </td>
+
+
 
           <td>
             <a href="{{ url_for('view_ticket', ticket_id=ticket.id) }}" class="btn btn-sm btn-outline-info">
@@ -128,24 +134,48 @@
     </table>
   </div>
 
-  <!-- Paginação automática -->
-  <div class="d-flex justify-content-center mt-4">
-    {% if total_pages > 1 %}
-      <nav>
-        <ul class="pagination pagination-sm">
-          {% for page_num in range(1, total_pages + 1) %}
-            <li class="page-item {% if page_num == current_page %}active{% endif %}">
-              <a class="page-link bg-dark text-white border-secondary"
-                 href="{{ url_for('tickets', page=page_num, status_filter=request.args.get('status_filter'), responsavel_filter=request.args.get('responsavel_filter')) }}">
-                {{ page_num }}
-              </a>
-            </li>
-          {% endfor %}
-        </ul>
-      </nav>
-    {% endif %}
-  </div>
-</div>
+  <!-- Paginação -->
+{% if total_pages > 1 %}
+  <nav aria-label="Navegação de páginas" class="mt-4">
+    <ul class="pagination justify-content-center pagination-sm">
+
+      {% if has_prev %}
+        <li class="page-item">
+          <a class="page-link bg-dark text-white border-secondary"
+             href="{{ url_for('my_tickets', page=prev_page) }}">
+            « Anterior
+          </a>
+        </li>
+      {% else %}
+        <li class="page-item disabled">
+          <span class="page-link bg-dark text-secondary border-secondary">« Anterior</span>
+        </li>
+      {% endif %}
+
+      {% for p in range(1, total_pages + 1) %}
+        <li class="page-item {% if p == current_page %}active{% endif %}">
+          <a class="page-link bg-dark text-white border-secondary" href="{{ url_for('my_tickets', page=p) }}">
+            {{ p }}
+          </a>
+        </li>
+      {% endfor %}
+
+      {% if has_next %}
+        <li class="page-item">
+          <a class="page-link bg-dark text-white border-secondary"
+             href="{{ url_for('my_tickets', page=next_page) }}">
+            Próxima »
+          </a>
+        </li>
+      {% else %}
+        <li class="page-item disabled">
+          <span class="page-link bg-dark text-secondary border-secondary">Próxima »</span>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}
+
 
 <style>
   .table-dark td, .table-dark th {

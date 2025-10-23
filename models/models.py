@@ -55,8 +55,7 @@ class TicketAttachment(db.Model):
     filepath = db.Column(db.String(255))
     uploaded_at = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone('America/Sao_Paulo')))
 
-#Inicio do codigo para tela de Ativos
-
+#Inicio do codigo para tela de Ativo
 class CostCenter(db.Model):
     __tablename__ = 'cost_centers'
     id = db.Column(db.Integer, primary_key=True)

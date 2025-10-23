@@ -7,10 +7,11 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
       </div>
 
-      <form action="{{ url_for('novo_ativo') }}" method="POST">
+      <form id="novoAtivoForm" action="{{ url_for('novo_ativo') }}" method="POST">
         <div class="modal-body">
           <div class="row g-3">
 
+            <!-- Tipo -->
             <div class="col-md-6">
               <label class="form-label text-secondary small">Tipo de Ativo</label>
               <select class="form-select bg-black text-light border-secondary" name="type_id" required>
@@ -21,36 +22,43 @@
               </select>
             </div>
 
+            <!-- Marca -->
             <div class="col-md-6">
               <label class="form-label text-secondary small">Marca</label>
               <input type="text" name="brand" class="form-control bg-black text-light border-secondary" placeholder="Ex: Dell, HP..." required>
             </div>
 
+            <!-- Modelo -->
             <div class="col-md-6">
               <label class="form-label text-secondary small">Modelo</label>
               <input type="text" name="model" class="form-control bg-black text-light border-secondary" placeholder="Ex: Latitude 5400" required>
             </div>
 
+            <!-- Número de Série -->
             <div class="col-md-6">
               <label class="form-label text-secondary small">Número de Série</label>
               <input type="text" name="serial_number" class="form-control bg-black text-light border-secondary" placeholder="Ex: SN123456" required>
             </div>
 
+            <!-- Hostname -->
             <div class="col-md-6">
               <label class="form-label text-secondary small">Hostname</label>
               <input type="text" name="hostname" class="form-control bg-black text-light border-secondary" placeholder="Ex: TI-PC-01">
             </div>
 
+            <!-- Nota Fiscal -->
             <div class="col-md-6">
               <label class="form-label text-secondary small">Nota Fiscal</label>
               <input type="text" name="invoice_number" class="form-control bg-black text-light border-secondary" placeholder="Ex: NF-0001234">
             </div>
 
+            <!-- Código de Patrimônio -->
             <div class="col-md-6">
               <label class="form-label text-secondary small">Código de Patrimônio</label>
               <input type="text" name="patrimony_code" class="form-control bg-black text-light border-secondary" placeholder="Ex: PAT-001">
             </div>
 
+            <!-- Centro de Custo -->
             <div class="col-md-6">
               <label class="form-label text-secondary small">Centro de Custo</label>
               <select class="form-select bg-black text-light border-secondary" name="cost_center_id">
@@ -61,6 +69,7 @@
               </select>
             </div>
 
+            <!-- Usuário -->
             <div class="col-md-6">
               <label class="form-label text-secondary small">Usuário do Dispositivo</label>
               <select class="form-select bg-black text-light border-secondary" name="device_user_id">
@@ -71,6 +80,7 @@
               </select>
             </div>
 
+            <!-- Status -->
             <div class="col-md-6">
               <label class="form-label text-secondary small">Status</label>
               <select class="form-select bg-black text-light border-secondary" name="status">
@@ -80,6 +90,7 @@
               </select>
             </div>
 
+            <!-- Propriedade -->
             <div class="col-md-6">
               <label class="form-label text-secondary small">Propriedade</label>
               <select class="form-select bg-black text-light border-secondary" name="ownership">
@@ -88,16 +99,25 @@
               </select>
             </div>
 
+            <!-- 🆕 Localização -->
+            <div class="col-md-6">
+              <label class="form-label text-secondary small">Localização</label>
+              <input type="text" name="location" class="form-control bg-black text-light border-secondary" placeholder="Ex: Almoxarifado, Escritório, TI..." required>
+            </div>
+
+            <!-- Data de Aquisição -->
             <div class="col-md-6">
               <label class="form-label text-secondary small">Data de Aquisição</label>
               <input type="date" name="acquisition_date" class="form-control bg-black text-light border-secondary">
             </div>
 
+            <!-- Data de Devolução -->
             <div class="col-md-6">
               <label class="form-label text-secondary small">Data de Devolução</label>
               <input type="date" name="return_date" class="form-control bg-black text-light border-secondary">
             </div>
 
+            <!-- Observações -->
             <div class="col-12">
               <label class="form-label text-secondary small">Observações</label>
               <textarea name="notes" class="form-control bg-black text-light border-secondary" rows="3" placeholder="Informações adicionais..."></textarea>
@@ -108,7 +128,10 @@
 
         <div class="modal-footer border-secondary">
           <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Salvar Ativo</button>
+          <button id="btnSalvarAtivo" type="submit" class="btn btn-primary">
+            <span id="spinnerNovoAtivo" class="spinner-border spinner-border-sm d-none me-2"></span>
+            Salvar Ativo
+          </button>
         </div>
       </form>
     </div>
@@ -116,7 +139,6 @@
 </div>
 
 <script>
-// === Efeito de "Salvando..." no botão ===
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("novoAtivoForm");
   const btn = document.getElementById("btnSalvarAtivo");

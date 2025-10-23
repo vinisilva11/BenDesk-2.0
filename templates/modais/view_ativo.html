@@ -1,57 +1,44 @@
 <!-- Modal Visualizar Ativo -->
-<div class="modal fade" id="viewAtivo{{ ativo.id }}" tabindex="-1" aria-labelledby="viewAtivoLabel{{ ativo.id }}" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content bg-dark text-light border-0 rounded-4 shadow-lg">
+<div class="modal fade" id="viewAtivo{{ ativo.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content bg-dark text-white border-0 shadow-lg">
+      
+      <!-- Cabeçalho -->
       <div class="modal-header border-secondary">
-        <h5 class="modal-title fw-bold" id="viewAtivoLabel{{ ativo.id }}">
-          👁️ Visualizar Ativo
+        <h5 class="modal-title">
+          <i data-lucide="eye"></i> Detalhes do Ativo
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
 
+      <!-- Corpo -->
       <div class="modal-body">
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label text-secondary small">Tipo</label>
-            <input type="text" class="form-control bg-black text-light border-secondary" value="{{ ativo.asset_type }}" readonly>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-secondary small">Marca</label>
-            <input type="text" class="form-control bg-black text-light border-secondary" value="{{ ativo.brand }}" readonly>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-secondary small">Modelo</label>
-            <input type="text" class="form-control bg-black text-light border-secondary" value="{{ ativo.model }}" readonly>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-secondary small">Número de Série</label>
-            <input type="text" class="form-control bg-black text-light border-secondary" value="{{ ativo.serial_number }}" readonly>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-secondary small">Status</label>
-            <input type="text" class="form-control bg-black text-light border-secondary" value="{{ ativo.status }}" readonly>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-secondary small">Usuário</label>
-            <input type="text" class="form-control bg-black text-light border-secondary" value="{{ ativo.first_name }} {{ ativo.last_name }}" readonly>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-secondary small">Centro de Custo</label>
-            <input type="text" class="form-control bg-black text-light border-secondary" value="{{ ativo.cc_nome }}" readonly>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-secondary small">Data de Aquisição</label>
-            <input type="text" class="form-control bg-black text-light border-secondary" value="{{ ativo.acquisition_date.strftime('%d/%m/%Y') if ativo.acquisition_date else '—' }}" readonly>
-          </div>
-          <div class="col-12">
-            <label class="form-label text-secondary small">Observações</label>
-            <textarea class="form-control bg-black text-light border-secondary" rows="3" readonly>{{ ativo.notes or 'Sem observações.' }}</textarea>
-          </div>
-        </div>
+        <ul class="list-unstyled mb-0 small">
+          <li><strong>ID:</strong> {{ ativo.id }}</li>
+          <li><strong>Tipo:</strong> {{ ativo.asset_type or '—' }}</li>
+          <li><strong>Marca:</strong> {{ ativo.brand or '—' }}</li>
+          <li><strong>Modelo:</strong> {{ ativo.model or '—' }}</li>
+          <li><strong>Nº de Série:</strong> {{ ativo.serial_number or '—' }}</li>
+          <li><strong>Status:</strong> {{ ativo.status or '—' }}</li>
+          <li><strong>Usuário Vinculado:</strong> {{ ativo.first_name }} {{ ativo.last_name }}</li>
+          <li><strong>Centro de Custo:</strong> {{ ativo.cc_nome or '—' }}</li>
+          <li><strong>Localização:</strong> {{ ativo.location or '—' }}</li>
+          <li><strong>Propriedade:</strong> {{ ativo.ownership or '—' }}</li>
+          <li><strong>Data de Aquisição:</strong> 
+            {{ ativo.acquisition_date.strftime('%d/%m/%Y') if ativo.acquisition_date else '—' }}
+          </li>
+          <li><strong>Data de Devolução:</strong> 
+            {{ ativo.return_date.strftime('%d/%m/%Y') if ativo.return_date else '—' }}
+          </li>
+          <li><strong>Observações:</strong> {{ ativo.notes or 'Sem observações.' }}</li>
+        </ul>
       </div>
 
+      <!-- Rodapé -->
       <div class="modal-footer border-secondary">
-        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Fechar</button>
+        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">
+          Fechar
+        </button>
       </div>
     </div>
   </div>

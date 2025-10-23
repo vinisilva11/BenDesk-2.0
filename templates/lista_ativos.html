@@ -112,12 +112,39 @@
           <td>{{ ativo.acquisition_date.strftime('%d/%m/%Y') if ativo.acquisition_date else '—' }}</td>
           <td>
             <div class="d-flex gap-2">
-              <a href="#" class="btn btn-sm btn-outline-info"><i data-lucide="eye"></i></a>
-              <a href="#" class="btn btn-sm btn-outline-warning"><i data-lucide="edit"></i></a>
-              <a href="#" class="btn btn-sm btn-outline-danger"><i data-lucide="trash-2"></i></a>
+              <!-- 👁️ Visualizar -->
+              <button
+                class="btn btn-sm btn-outline-info"
+                data-bs-toggle="modal"
+                data-bs-target="#viewAtivo{{ ativo.id }}">
+                <i data-lucide="eye"></i>
+              </button>
+
+              <!-- ✏️ Editar -->
+              <button
+                class="btn btn-sm btn-outline-warning"
+                data-bs-toggle="modal"
+                data-bs-target="#editAtivo{{ ativo.id }}">
+                <i data-lucide="edit"></i>
+              </button>
+
+              <!-- 🗑️ Excluir -->
+              <button
+                class="btn btn-sm btn-outline-danger"
+                data-bs-toggle="modal"
+                data-bs-target="#deleteAtivo{{ ativo.id }}">
+                <i data-lucide="trash-2"></i>
+              </button>
             </div>
           </td>
         </tr>
+
+        <!-- 🧩 Inclui os modais específicos de cada ativo -->
+        {% include 'modais/view_ativo.html' %}
+        {% include 'modais/edit_ativo.html' %}
+        {% include 'modais/delete_ativo.html' %}
+
+
         {% else %}
         <tr>
           <td colspan="11" class="text-center text-secondary py-4">Nenhum ativo encontrado.</td>

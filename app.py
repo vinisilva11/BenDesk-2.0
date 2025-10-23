@@ -14,8 +14,10 @@ import os
 app = Flask(__name__)
 app.config.from_object(Config)
 
-UPLOAD_FOLDER = 'uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# 📂 Caminho global de uploads (melhor prática Flask)
+app.config['UPLOAD_FOLDER'] = os.path.join(app.static_folder, 'uploads', 'attachments')
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
 
 # ✅ Inicializa o banco de dados
 db.init_app(app)
@@ -128,8 +130,7 @@ def new_ticket():
                 status='Aberto',
                 priority=priority,
                 requester_email=requester_email,
-                requester_name=requester_name,
-                avatar_path=avatar_filename
+                requester_name=requester_name
             )
 
             db.session.add(new_ticket)
@@ -139,7 +140,7 @@ def new_ticket():
             file = request.files.get('file')
             if file and file.filename.strip():
                 filename = secure_filename(file.filename)
-                filepath = os.path.join(UPLOAD_FOLDER, filename)
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(filepath)
 
                 attachment = TicketAttachment(
@@ -356,21 +357,48 @@ def edit_user(user_id):
 @app.route('/my_tickets')
 @login_required
 def my_tickets():
-    my_tickets = Ticket.query.filter(
-        Ticket.assigned_to == current_user.username,
-        Ticket.status.notin_(['Encerrado', 'Cancelado'])
-    ).order_by(Ticket.id.asc()).all()
+    page = request.args.get('page', 1, type=int)
 
-    user_emails = {user.username: user.email for user in User.query.all()}
-    for t in my_tickets:
-        t.assigned_to_email = user_emails.get(t.assigned_to, None)
+    # 🔹 Mostra todos os tickets, do mais recente pro mais antigo
+    query = Ticket.query.order_by(Ticket.id.desc())
 
+    # 🔹 Paginação — 10 por página
+    pagination = query.paginate(page=page, per_page=10, error_out=False)
+    tickets = pagination.items
+
+    # 🔹 Calcula SLA dinâmico (mesma lógica do chamados_painel)
+    for t in tickets:
+        if t.created_at:
+            # Define o prazo baseado na prioridade
+            prazo_horas = 8 if t.priority == 'Alta' else 24 if t.priority == 'Média' else 48
+            sla_limit = t.created_at + timedelta(hours=prazo_horas)
+            restante = (sla_limit - datetime.now()).total_seconds()
+
+            if restante <= 0:
+                t.sla = {'texto': 'Expirado', 'cor': 'text-danger'}
+            elif restante < 3600:
+                t.sla = {'texto': f"{int(restante // 60)} min restantes", 'cor': 'text-warning'}
+            elif restante < 86400:
+                t.sla = {'texto': f"{int(restante // 3600)}h restantes", 'cor': 'text-success'}
+            else:
+                t.sla = {'texto': f"{int(restante // 86400)}d restantes", 'cor': 'text-secondary'}
+        else:
+            t.sla = {'texto': '—', 'cor': 'text-muted'}
+
+    # 🔹 Renderiza o template
     return render_template(
         'tickets.html',
-        tickets=my_tickets,
+        tickets=tickets,
         datetime=datetime,
-        timedelta=timedelta
+        timedelta=timedelta,
+        total_pages=pagination.pages,
+        current_page=pagination.page,
+        has_prev=pagination.has_prev,
+        has_next=pagination.has_next,
+        prev_page=pagination.prev_num,
+        next_page=pagination.next_num
     )
+
 
 
 #Inicio do codigo (rota) para a tela de ativos
