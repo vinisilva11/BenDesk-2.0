@@ -37,6 +37,33 @@
     </div>
   </div>
 
+    <!-- ===== Tabela de Resumo ===== -->
+<div class="card p-4 mt-4">
+  <h5 class="fw-bold mb-3"><i data-lucide="list" class="me-2"></i> Resumo dos Ativos</h5>
+  <div class="table-responsive">
+    <table class="table table-dark table-hover align-middle">
+      <thead>
+        <tr class="text-secondary text-uppercase small">
+          <th>Tipo de Ativo</th>
+          <th>Quantidade</th>
+        </tr>
+      </thead>
+      <tbody>
+          {% for tipo, qtd in ativos_zip %}
+        <tr>
+          <td class="fw-semibold text-white">{{ tipo }}</td>
+          <td>{{ qtd }}</td>
+        </tr>
+          {% else %}
+        <tr>
+          <td colspan="2" class="text-center text-secondary py-3">Nenhum ativo registrado.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+  
   <!-- ===== GRÁFICOS ===== -->
   <div class="row mt-5">
     <div class="col-md-7">
@@ -52,14 +79,17 @@
       </div>
     </div>
   </div>
+
 </div>
+
+
 
 <!-- ===== SCRIPTS ===== -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   lucide.createIcons();
 
-  // ===== Dados dos chamados =====
+  // ===== Chamados =====
   const chamadosData = JSON.parse('{{ [open_count, in_progress_count, closed_count] | tojson | safe }}');
 
   new Chart(document.getElementById('chartChamados'), {
@@ -75,27 +105,27 @@
     options: {
       plugins: { legend: { display: false } },
       scales: {
-        x: {
-          ticks: { color: '#fff' },
-          grid: { display: false }
-        },
-        y: {
-          ticks: { color: '#fff' },
-          grid: { color: 'rgba(255,255,255,0.1)' }
-        }
+        x: { ticks: { color: '#fff' }, grid: { display: false } },
+        y: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
       },
       animation: { duration: 1200 }
     }
   });
 
-  // ===== Gráfico de Ativos =====
+  // ===== Ativos (dados reais e dinâmicos do banco) =====
+  const ativosLabels = JSON.parse('{{ ativos_labels | tojson | safe }}');
+  const ativosCounts = JSON.parse('{{ ativos_counts | tojson | safe }}');
+
   new Chart(document.getElementById('chartAtivos'), {
     type: 'doughnut',
     data: {
-      labels: ['Computadores', 'Monitores', 'Notebooks', 'Outros'],
+      labels: ativosLabels,
       datasets: [{
-        data: [12, 8, 5, 3],
-        backgroundColor: ['#0d6efd', '#6610f2', '#198754', '#6c757d'],
+        data: ativosCounts,
+        backgroundColor: [
+          '#0d6efd', '#6610f2', '#198754', '#6c757d',
+          '#dc3545', '#20c997', '#ffc107', '#fd7e14'
+        ],
         borderWidth: 0
       }]
     },
@@ -103,11 +133,22 @@
       plugins: {
         legend: {
           position: 'bottom',
-          labels: { color: '#fff' }
+          labels: { color: '#fff', padding: 15 }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              let label = context.label || '';
+              let value = context.formattedValue || 0;
+              return `${label}: ${value} ativo(s)`;
+            }
+          }
         }
       },
       animation: { animateScale: true }
     }
   });
 </script>
+
+
 {% endblock %}

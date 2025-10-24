@@ -44,12 +44,12 @@ def load_user(user_id):
 @app.route('/')
 @login_required
 def index():
-    # Contadores de chamados
+    # ===== Chamados =====
     open_count = Ticket.query.filter_by(status='Aberto').count()
     in_progress_count = Ticket.query.filter_by(status='Em Andamento').count()
     closed_count = Ticket.query.filter_by(status='Encerrado').count()
 
-    # Tempo médio de resolução
+    # Tempo médio de resolução (minutos → d h m)
     avg_resolution = db.session.query(
         func.avg(text("TIMESTAMPDIFF(MINUTE, tickets.created_at, tickets.updated_at)"))
     ).filter(Ticket.status == 'Encerrado').scalar()
@@ -58,14 +58,39 @@ def index():
         avg_seconds = int(avg_resolution * 60)
         avg_days = avg_seconds // (24 * 3600)
         avg_hours = (avg_seconds % (24 * 3600)) // 3600
-        avg_time_text = f"{avg_days}d {avg_hours}h"
+        avg_minutes = (avg_seconds % 3600) // 60
+        avg_time_text = f"{avg_days}d {avg_hours}h {avg_minutes}m"
     else:
         avg_time_text = "N/A"
 
-    # ✅ Busca as 5 movimentações mais recentes do estoque
-    movimentacoes = EstoqueMovimentacao.query.order_by(EstoqueMovimentacao.timestamp.desc()).limit(5).all()
+    # ===== Ativos (todos os tipos existentes no banco) =====
+    ativos_raw = (
+        db.session.query(AssetType.name, func.count(Asset.id))
+        .join(Asset, Asset.type_id == AssetType.id, isouter=True)
+        .group_by(AssetType.name)
+        .order_by(func.count(Asset.id).desc())
+        .all()
+    )
 
-    # Renderiza o novo dashboard
+    if ativos_raw:
+        ativos_labels = [row[0] if row[0] else "Sem tipo" for row in ativos_raw]
+        ativos_counts = [row[1] for row in ativos_raw]
+    else:
+        ativos_labels = ["Sem dados"]
+        ativos_counts = [0]
+
+    # ✅ Cria pares (para a tabela do dashboard)
+    ativos_zip = list(zip(ativos_labels, ativos_counts))
+
+    # ===== Movimentações recentes do estoque =====
+    movimentacoes = (
+        EstoqueMovimentacao.query
+        .order_by(EstoqueMovimentacao.timestamp.desc())
+        .limit(5)
+        .all()
+    )
+
+    # ===== Renderização =====
     return render_template(
         'index.html',
         user=current_user,
@@ -73,8 +98,13 @@ def index():
         in_progress_count=in_progress_count,
         closed_count=closed_count,
         avg_resolution=avg_time_text,
-        movimentacoes=movimentacoes
+        movimentacoes=movimentacoes,
+        ativos_labels=ativos_labels,
+        ativos_counts=ativos_counts,
+        ativos_zip=ativos_zip  # ✅ Enviando pro HTML
     )
+
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -357,35 +387,66 @@ def edit_user(user_id):
 @app.route('/my_tickets')
 @login_required
 def my_tickets():
+    # Página atual (?page=2)
     page = request.args.get('page', 1, type=int)
 
-    # 🔹 Mostra todos os tickets, do mais recente pro mais antigo
-    query = Ticket.query.order_by(Ticket.id.desc())
+    # Filtros vindos da URL
+    status_filter = request.args.get('status_filter', '').strip()
+    responsavel_filter = request.args.get('responsavel_filter', '').strip()
 
-    # 🔹 Paginação — 10 por página
+    # Base da query
+    query = Ticket.query
+
+    # 🔹 Filtro de status
+    if status_filter == 'Aberto':
+        query = query.filter(Ticket.status == 'Aberto')
+    elif status_filter == 'Em Andamento':
+        query = query.filter(Ticket.status == 'Em Andamento')
+    elif status_filter == 'Fechados':
+        query = query.filter(Ticket.status.in_(['Encerrado', 'Cancelado']))
+
+    # 🔹 Filtro de responsável (busca parcial)
+    if responsavel_filter:
+        query = query.filter(Ticket.assigned_to.ilike(f"%{responsavel_filter}%"))
+
+    # Ordenação
+    query = query.order_by(Ticket.id.desc())
+
+    # Paginação
     pagination = query.paginate(page=page, per_page=10, error_out=False)
     tickets = pagination.items
 
-    # 🔹 Calcula SLA dinâmico (mesma lógica do chamados_painel)
+    # 🕒 Cálculo do SLA com minutos e congelamento ao encerrar
     for t in tickets:
-        if t.created_at:
-            # Define o prazo baseado na prioridade
-            prazo_horas = 8 if t.priority == 'Alta' else 24 if t.priority == 'Média' else 48
-            sla_limit = t.created_at + timedelta(hours=prazo_horas)
-            restante = (sla_limit - datetime.now()).total_seconds()
+        if not t.created_at:
+            t.sla = {"texto": "—", "cor": "text-muted"}
+            continue
 
-            if restante <= 0:
-                t.sla = {'texto': 'Expirado', 'cor': 'text-danger'}
-            elif restante < 3600:
-                t.sla = {'texto': f"{int(restante // 60)} min restantes", 'cor': 'text-warning'}
-            elif restante < 86400:
-                t.sla = {'texto': f"{int(restante // 3600)}h restantes", 'cor': 'text-success'}
-            else:
-                t.sla = {'texto': f"{int(restante // 86400)}d restantes", 'cor': 'text-secondary'}
+        fim = t.updated_at if t.status in ['Encerrado', 'Cancelado'] and t.updated_at else datetime.now()
+        tempo_decorrido = (fim - t.created_at).total_seconds()
+
+        horas_totais = tempo_decorrido / 3600
+        dias = int(horas_totais // 24)
+        horas = int(horas_totais % 24)
+        minutos = int((tempo_decorrido % 3600) / 60)
+
+        if dias > 0:
+            texto_sla = f"{dias}d {horas}h {minutos}m"
+        elif horas > 0:
+            texto_sla = f"{horas}h {minutos}m"
         else:
-            t.sla = {'texto': '—', 'cor': 'text-muted'}
+            texto_sla = f"{minutos}m"
 
-    # 🔹 Renderiza o template
+        if horas_totais <= 4:
+            cor = "text-success fw-bold"   # Verde
+        elif horas_totais <= 8:
+            cor = "text-warning fw-bold"   # Amarelo
+        else:
+            cor = "text-danger fw-bold"    # Vermelho
+
+        t.sla = {"texto": texto_sla, "cor": cor}
+
+    # Renderiza com paginação e filtros mantidos
     return render_template(
         'tickets.html',
         tickets=tickets,
@@ -396,7 +457,8 @@ def my_tickets():
         has_prev=pagination.has_prev,
         has_next=pagination.has_next,
         prev_page=pagination.prev_num,
-        next_page=pagination.next_num
+        next_page=pagination.next_num,
+        request=request  # 👈 necessário pro template lembrar os filtros
     )
 
 
@@ -679,36 +741,38 @@ def chamados_painel():
 
     last_tickets = Ticket.query.order_by(Ticket.created_at.desc()).limit(5).all()
 
-    # 🧮 Cálculo do SLA (com tooltip)
+    # 🧮 Cálculo de SLA (com minutos e congelamento ao encerrar)
     for t in last_tickets:
         if not t.created_at:
-            t.sla = {"texto": "N/A", "cor": "text-muted", "tooltip": "Sem dados"}
+            t.sla = {"texto": "—", "cor": "text-muted"}
             continue
 
-        diff = datetime.utcnow() - t.created_at
-        total_horas = diff.total_seconds() / 3600
-        dias = int(total_horas // 24)
-        horas = int(total_horas % 24)
-        sla_texto = f"{dias}d {horas}h"
+        # Se encerrado/cancelado, congela o tempo em updated_at
+        fim = t.updated_at if t.status in ['Encerrado', 'Cancelado'] and t.updated_at else datetime.now()
+        tempo_decorrido = (fim - t.created_at).total_seconds()
 
-        if total_horas <= 4:
-            t.sla = {
-                "texto": sla_texto,
-                "cor": "text-success fw-bold",
-                "tooltip": "Dentro do SLA (até 4h)"
-            }  # 🟢 verde
-        elif total_horas <= 8:
-            t.sla = {
-                "texto": sla_texto,
-                "cor": "text-warning fw-bold",
-                "tooltip": "Atenção: entre 4h e 8h"
-            }  # 🟡 amarelo
+        horas_totais = tempo_decorrido / 3600
+        dias = int(horas_totais // 24)
+        horas = int(horas_totais % 24)
+        minutos = int((tempo_decorrido % 3600) / 60)
+
+        # Monta o texto (1d 3h 42m, 7h 10m, etc.)
+        if dias > 0:
+            texto_sla = f"{dias}d {horas}h {minutos}m"
+        elif horas > 0:
+            texto_sla = f"{horas}h {minutos}m"
         else:
-            t.sla = {
-                "texto": sla_texto,
-                "cor": "text-danger fw-bold",
-                "tooltip": "Fora do SLA (mais de 8h)"
-            }  # 🔴 vermelho
+            texto_sla = f"{minutos}m"
+
+        # Define cor
+        if horas_totais <= 4:
+            cor = "text-success fw-bold"   # Verde
+        elif horas_totais <= 8:
+            cor = "text-warning fw-bold"   # Amarelo
+        else:
+            cor = "text-danger fw-bold"    # Vermelho
+
+        t.sla = {"texto": texto_sla, "cor": cor}
 
     # Tempo médio de resolução
     avg_resolution = db.session.query(
@@ -719,7 +783,8 @@ def chamados_painel():
         avg_seconds = int(avg_resolution * 60)
         avg_days = avg_seconds // (24 * 3600)
         avg_hours = (avg_seconds % (24 * 3600)) // 3600
-        avg_time_text = f"{avg_days}d {avg_hours}h"
+        avg_minutes = (avg_seconds % 3600) // 60
+        avg_time_text = f"{avg_days}d {avg_hours}h {avg_minutes}m"
     else:
         avg_time_text = "N/A"
 
@@ -734,7 +799,6 @@ def chamados_painel():
         avg_resolution=avg_time_text,
         last_tickets=last_tickets
     )
-
 
 
 # ✅ Corrige problema de cálculo global que afeta /ativos e outras páginas

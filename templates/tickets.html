@@ -55,8 +55,8 @@
           <th>Responsável</th>
           <th>Status</th>
           <th>Prioridade</th>
-          <th>Ações</th>
           <th>SLA</th>
+          <th>Ações</th>
         </tr>
       </thead>
       <tbody>
@@ -113,11 +113,10 @@
               <span class="badge bg-secondary">{{ ticket.priority }}</span>
             {% endif %}
           </td>
+
           <td>
               <span class="badge {{ ticket.sla.cor }}">{{ ticket.sla.texto }}</span>
           </td>
-
-
 
           <td>
             <a href="{{ url_for('view_ticket', ticket_id=ticket.id) }}" class="btn btn-sm btn-outline-info">
