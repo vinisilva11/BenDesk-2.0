@@ -8,10 +8,8 @@ estoque_bp = Blueprint('estoque', __name__)
 @estoque_bp.route('/estoque')
 @login_required
 def estoque():
-    # Busca todos os materiais
     materiais = EstoqueItem.query.order_by(EstoqueItem.nome).all()
 
-    # Gera resumo por categoria
     categorias_data = {}
     for m in materiais:
         if m.categoria:
@@ -19,11 +17,8 @@ def estoque():
         else:
             categorias_data["Sem Categoria"] = categorias_data.get("Sem Categoria", 0) + 1
 
-    # Contadores simples de movimentações
     entradas = EstoqueMovimentacao.query.filter_by(tipo='entrada').count()
     saidas = EstoqueMovimentacao.query.filter_by(tipo='saida').count()
-
-    # Histórico (últimas 20 movimentações)
     historico = EstoqueMovimentacao.query.order_by(EstoqueMovimentacao.timestamp.desc()).limit(20).all()
 
     return render_template(
@@ -32,10 +27,8 @@ def estoque():
         categorias_data=categorias_data,
         entradas=entradas,
         saidas=saidas,
-        historico=historico  # 👈 passa o histórico pro HTML
+        historico=historico
     )
-
-
 
 
 # ➕ Cadastro de novo material
@@ -52,17 +45,24 @@ def novo_material():
         quantidade = float(request.form.get('quantidade') or 0)
         observacoes = request.form.get('observacoes')
 
-        # Cria o item no estoque
         novo_item = EstoqueItem(
             nome=nome,
             categoria=categoria,
             unidade=unidade,
             quantidade=quantidade
         )
-        db.session.add(novo_item)
-        db.session.flush()  # 🔥 força a geração imediata do ID
 
-        # Registra a movimentação (entrada)
+        # ✅ Define status inicial
+        if quantidade <= 0:
+            novo_item.status = 'Reservado'
+        elif quantidade <= 5:
+            novo_item.status = 'Baixo Estoque'
+        else:
+            novo_item.status = 'Disponível'
+
+        db.session.add(novo_item)
+        db.session.flush()  # força geração do ID
+
         movimento = EstoqueMovimentacao(
             tipo='entrada',
             item_id=novo_item.id,
@@ -76,11 +76,47 @@ def novo_material():
         flash('✅ Material cadastrado e entrada registrada com sucesso!', 'success')
         return redirect(url_for('estoque.estoque'))
     
-    # 🔹 Busca categorias distintas já existentes
     categorias_existentes = sorted({i.categoria for i in EstoqueItem.query.all() if i.categoria})
-
     return render_template('novo_item.html', categorias=categorias_existentes)
 
+
+# 🔄 Entrada de material existente (reposição)
+@estoque_bp.route('/estoque/entrada', methods=['POST'])
+@login_required
+def entrada_estoque():
+    item_id = request.form.get('item_id')
+    quantidade = float(request.form.get('quantidade') or 0)
+    observacoes = request.form.get('observacoes')
+
+    item = EstoqueItem.query.get(item_id)
+
+    if not item:
+        flash('⚠️ Erro: item não encontrado.', 'danger')
+        return redirect(url_for('estoque.estoque'))
+
+    # Atualiza a quantidade do estoque
+    item.quantidade += quantidade
+
+    # ✅ Atualiza status automaticamente (reposição)
+    if item.quantidade <= 0:
+        item.status = 'Reservado'
+    elif item.quantidade <= 5:
+        item.status = 'Baixo Estoque'
+    else:
+        item.status = 'Disponível'
+
+    movimento = EstoqueMovimentacao(
+        tipo='entrada',
+        item_id=item.id,
+        quantidade=quantidade,
+        descricao=observacoes or 'Reposição de material',
+        usuario=current_user.username
+    )
+    db.session.add(movimento)
+    db.session.commit()
+
+    flash('✅ Entrada registrada e status atualizado!', 'success')
+    return redirect(url_for('estoque.estoque'))
 
 
 # ➖ Saída de material
@@ -102,8 +138,15 @@ def saida_estoque():
         flash('⚠️ Quantidade insuficiente em estoque.', 'danger')
         return redirect(url_for('estoque.estoque'))
 
-    # Atualiza o estoque
     item.quantidade -= quantidade
+
+    # ✅ Atualiza status após saída
+    if item.quantidade <= 0:
+        item.status = 'Reservado'
+    elif item.quantidade <= 5:
+        item.status = 'Baixo Estoque'
+    else:
+        item.status = 'Disponível'
 
     movimento = EstoqueMovimentacao(
         tipo='saida',
@@ -115,7 +158,7 @@ def saida_estoque():
     db.session.add(movimento)
     db.session.commit()
 
-    flash('✅ Saída registrada com sucesso!', 'success')
+    flash('✅ Saída registrada e status atualizado!', 'success')
     return redirect(url_for('estoque.estoque'))
 
 
@@ -162,6 +205,15 @@ def editar_item(id):
     item.categoria = data.get('categoria')
     item.unidade = data.get('unidade')
     item.quantidade = float(data.get('quantidade') or 0)
+
+    # ✅ Atualiza status após edição
+    if item.quantidade <= 0:
+        item.status = 'Reservado'
+    elif item.quantidade <= 5:
+        item.status = 'Baixo Estoque'
+    else:
+        item.status = 'Disponível'
+
     db.session.commit()
     flash('✅ Item atualizado com sucesso!', 'success')
     return redirect(url_for('estoque.estoque'))

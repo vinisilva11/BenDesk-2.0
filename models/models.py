@@ -102,29 +102,42 @@ class Asset(db.Model):
 
 # Final do codigo para tela de ativos
 
-#Inicio da Class dos estoques    
-# ✅ Tabela de itens em estoque
+
+# ✅ Tabela de itens de estoque
 class EstoqueItem(db.Model):
     __tablename__ = 'estoque_itens'
 
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), nullable=False)
     categoria = db.Column(db.String(50))
-    quantidade = db.Column(db.Float, default=0)
     unidade = db.Column(db.String(20))
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone('America/Sao_Paulo')))
+    quantidade = db.Column(db.Float, default=0)
+    status = db.Column(db.String(20), default='disponível')
 
-# ✅ Tabela de movimentações (entradas/saídas)
+    # 👇 relação com movimentações
+    movimentacoes = db.relationship(
+        'EstoqueMovimentacao',
+        back_populates='item',
+        cascade='all, delete-orphan',
+        passive_deletes=True
+    )
+
+
+# ✅ Tabela de movimentações
 class EstoqueMovimentacao(db.Model):
     __tablename__ = 'estoque_movimentacoes'
 
     id = db.Column(db.Integer, primary_key=True)
     tipo = db.Column(db.String(20))  # entrada ou saida
-    item_id = db.Column(db.Integer, db.ForeignKey('estoque_itens.id'), nullable=False)
-    item = db.relationship('EstoqueItem', backref='movimentacoes')
+    item_id = db.Column(
+        db.Integer,
+        db.ForeignKey('estoque_itens.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    item = db.relationship('EstoqueItem', back_populates='movimentacoes')
     quantidade = db.Column(db.Float)
     descricao = db.Column(db.String(255))
-    usuario = db.Column(db.String(100))  # Nome ou username do usuário que realizou
+    usuario = db.Column(db.String(100))
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone('America/Sao_Paulo')))
 
 # Final do codigo para Class dos estoques•µ   

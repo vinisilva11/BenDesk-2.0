@@ -1,6 +1,6 @@
 import requests
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from models.models import db, Ticket, TicketComment, TicketAttachment
 from flask import Flask
 import os
@@ -44,6 +44,7 @@ if hasattr(Config, "USE_MSAL") and Config.USE_MSAL is False:
 
     def process_emails():
         print("🚫 [DEV] Processamento de e-mails desativado.")
+
 # ===========================================================
 #  MODO PRODUÇÃO: TUDO ATIVO (MSAL, SMTP, ETC)
 # ===========================================================
@@ -116,7 +117,8 @@ else:
 
         if received_time:
             created_time = datetime.strptime(received_time, '%Y-%m-%dT%H:%M:%S%z')
-            created_time = created_time.astimezone(timezone.utc).replace(tzinfo=None)
+            created_time = created_time.astimezone(timezone(timedelta(hours=-3)))  # 🇧🇷 UTC-3
+            created_time = created_time.replace(tzinfo=None)
         else:
             created_time = datetime.utcnow()
 
@@ -143,6 +145,16 @@ else:
                     db.session.commit()
                     return
 
+                recent_ticket = Ticket.query.filter(
+                    Ticket.requester_email == sender_email,
+                    Ticket.title == subject,
+                    Ticket.created_at >= datetime.utcnow() - timedelta(hours=2)
+                ).first()
+
+                if recent_ticket:
+                    print(f"⚠️ Ticket duplicado detectado — ignorando criação: {subject}")
+                return        
+
             # 🚨 Cria novo ticket se não houver match
             new_ticket = Ticket(
                 title=subject,
@@ -156,7 +168,11 @@ else:
             )
             db.session.add(new_ticket)
             db.session.commit()
-            send_confirmation_email(new_ticket, sender_email, sender_name)
+
+            # 🔕 DESATIVADO: Evita envio de e-mail automático ao criar chamado
+            print(f"📥 Novo ticket criado automaticamente a partir de {sender_email}, sem envio de confirmação.")
+
+            # Salva anexos normalmente
             save_attachments(email['id'], new_ticket.id, get_access_token())
 
     def send_confirmation_email(ticket, recipient_email, recipient_name):
@@ -246,8 +262,9 @@ Equipe de TI - Synerjet
         emails = fetch_unread_emails(token)
         print(f"Encontrados {len(emails)} e-mails não lidos.")
         for email in emails:
-            create_ticket_or_comment_from_email(email)
+            # ✅ Marca o e-mail como lido primeiro, para evitar duplicação
             mark_email_as_read(email['id'], token)
+            create_ticket_or_comment_from_email(email)
 
     UPLOAD_FOLDER = 'uploads'
 

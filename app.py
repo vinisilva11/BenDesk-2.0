@@ -3,12 +3,32 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from models.models import db, User, Ticket, TicketHistory, TicketComment, TicketAttachment, Asset, CostCenter, DeviceUser, AssetType, EstoqueMovimentacao
 from email_to_ticket import send_confirmation_email, send_update_email
+# 🔄 Importa o processador automático de e-mails
+from email_to_ticket import process_emails
+import threading
+import time
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from sqlalchemy import func, text, asc, desc
 from config_dev import Config
 from routes.routes_ativos import bp_ativos
 import os
+
+
+# ==============================================================
+# 📨 PROCESSAMENTO AUTOMÁTICO DE E-MAILS (MS Graph Listener)
+# ==============================================================
+def start_email_listener():
+    """Thread que verifica novos e-mails a cada 3 minutos."""
+    while True:
+        try:
+            print("📥 Verificando novos e-mails de suporte...")
+            process_emails()
+            print("✅ Verificação concluída.\n")
+        except Exception as e:
+            print(f"⚠️ Erro ao processar e-mails: {e}")
+        time.sleep(180)  # verifica a cada 3 minutos
+
 
 # ✅ Criação da aplicação Flask
 app = Flask(__name__)
@@ -462,7 +482,6 @@ def my_tickets():
     )
 
 
-
 #Inicio do codigo (rota) para a tela de ativos
 @app.route('/ativos')
 @login_required
@@ -474,6 +493,7 @@ def ativos():
             Asset.model,
             Asset.status,
             Asset.acquisition_date,
+            Asset.location,  # ✅ adicionado campo de localização
             DeviceUser.first_name,
             DeviceUser.last_name,
             CostCenter.name.label('cc_nome'),
@@ -491,9 +511,24 @@ def ativos():
     centros = CostCenter.query.all()
 
     # Dados dos gráficos
-    ativos_por_tipo = dict(db.session.query(AssetType.name, func.count(Asset.id)).join(Asset).group_by(AssetType.name).all())
-    ativos_por_cc = dict(db.session.query(CostCenter.name, func.count(Asset.id)).join(Asset).group_by(CostCenter.name).all())
-    ativos_por_departamento = dict(db.session.query(DeviceUser.department, func.count(Asset.id)).join(Asset).group_by(DeviceUser.department).all())
+    ativos_por_tipo = dict(
+        db.session.query(AssetType.name, func.count(Asset.id))
+        .join(Asset)
+        .group_by(AssetType.name)
+        .all()
+    )
+    ativos_por_cc = dict(
+        db.session.query(CostCenter.name, func.count(Asset.id))
+        .join(Asset)
+        .group_by(CostCenter.name)
+        .all()
+    )
+    ativos_por_departamento = dict(
+        db.session.query(DeviceUser.department, func.count(Asset.id))
+        .join(Asset)
+        .group_by(DeviceUser.department)
+        .all()
+    )
 
     return render_template(
         'ativos.html',
@@ -505,7 +540,6 @@ def ativos():
         ativos_por_cc=ativos_por_cc,
         ativos_por_departamento=ativos_por_departamento
     )
-
 
 
 @app.route('/ativos/check_serial')
@@ -836,12 +870,17 @@ def inject_dashboard_data():
             avg_resolution="N/A"
         )
 
-
 @app.context_processor
 def inject_datetime():
     from datetime import datetime
     return dict(datetime=datetime)
 
+# 🚀 INICIALIZA O LISTENER DE E-MAILS EM BACKGROUND
+if hasattr(Config, "USE_MSAL") and Config.USE_MSAL:
+    threading.Thread(target=start_email_listener, daemon=True).start()
+    print("📡 Listener de e-mails iniciado com sucesso.")
+else:
+    print("⚠️ Listener de e-mails desativado (modo DEV).")
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)

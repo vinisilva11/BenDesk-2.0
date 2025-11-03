@@ -125,7 +125,7 @@ def excluir_tipo_dispositivo(id):
 def usuarios_dispositivo():
     usuarios = DeviceUser.query.order_by(DeviceUser.first_name.asc()).all()
     centros = CostCenter.query.all()
-    return render_template("usuarios_dispositivos.html", usuarios=usuarios, centros=centros)
+    return render_template("usuarios_dispositivo.html", usuarios=usuarios, centros=centros)
 
 
 @bp_ativos.route("/usuarios-dispositivo/novo", methods=["POST"])

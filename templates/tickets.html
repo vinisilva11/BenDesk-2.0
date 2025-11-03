@@ -195,5 +195,21 @@
 
 <script>
   lucide.createIcons();
+
+  // Atualiza somente a tabela de chamados a cada 30 segundos
+  setInterval(() => {
+    fetch(window.location.href)
+      .then(r => r.text())
+      .then(html => {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const novo = doc.querySelector('.table-responsive');
+        if (novo) {
+          document.querySelector('.table-responsive').innerHTML = novo.innerHTML;
+          if (window.lucide) lucide.createIcons();
+        }
+      })
+      .catch(console.error);
+  }, 180000); // 3 min
 </script>
+
 {% endblock %}
