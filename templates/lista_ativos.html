@@ -17,11 +17,12 @@
       <label class="form-label text-secondary small">Tipo de Ativo</label>
       <select class="form-select bg-dark text-light border-secondary" name="tipo">
         <option value="">Todos</option>
-        {% for tipo_nome, tipo_label in tipos.items() %}
-        <option value="{{ tipo_nome }}" {% if filtro_tipo == tipo_nome %}selected{% endif %}>
-          {{ tipo_label }}
-        </option>
-        {% endfor %}
+        {% for tipo in tipos %}
+  <option value="{{ tipo.name }}" {% if filtro_tipo == tipo.name %}selected{% endif %}>
+    {{ tipo.name }}
+  </option>
+{% endfor %}
+
       </select>
     </div>
 
@@ -141,7 +142,7 @@
 
         <!-- 🧩 Inclui os modais específicos de cada ativo -->
         {% include 'modais/view_ativo.html' %}
-        {% include 'modais/edit_ativo.html' %}
+        {% include 'modais/edit_ativo.html' with context %}
         {% include 'modais/delete_ativo.html' %}
 
 
@@ -167,6 +168,11 @@
 
 <script>
   lucide.createIcons();
+
+
+  setInterval(() => {
+    window.location.reload();
+  }, 180000);
 </script>
 
 {% endblock %}

@@ -487,24 +487,27 @@ def my_tickets():
 @login_required
 def ativos():
     ativos = (
-        db.session.query(
-            Asset.id,
-            Asset.brand,
-            Asset.model,
-            Asset.status,
-            Asset.acquisition_date,
-            Asset.location,  # ✅ adicionado campo de localização
-            DeviceUser.first_name,
-            DeviceUser.last_name,
-            CostCenter.name.label('cc_nome'),
-            AssetType.name.label('asset_type')
-        )
-        .join(DeviceUser, Asset.device_user_id == DeviceUser.id, isouter=True)
-        .join(CostCenter, Asset.cost_center_id == CostCenter.id, isouter=True)
-        .join(AssetType, Asset.type_id == AssetType.id, isouter=True)
-        .order_by(Asset.id.desc())
-        .all()
+    db.session.query(
+        Asset.id,
+        Asset.brand,
+        Asset.model,
+        Asset.status,
+        Asset.acquisition_date,
+        Asset.location,
+        Asset.cost_center_id,  
+        Asset.device_user_id,  
+        DeviceUser.first_name,
+        DeviceUser.last_name,
+        CostCenter.name.label('cc_nome'),
+        AssetType.name.label('asset_type')
     )
+    .join(DeviceUser, Asset.device_user_id == DeviceUser.id, isouter=True)
+    .join(CostCenter, Asset.cost_center_id == CostCenter.id, isouter=True)
+    .join(AssetType, Asset.type_id == AssetType.id, isouter=True)
+    .order_by(Asset.id.desc())
+    .all()
+)
+
 
     tipos = AssetType.query.all()
     usuarios = DeviceUser.query.all()
@@ -604,7 +607,7 @@ def novo_ativo():
 
 
 # ======================================
-# ROTA: Editar Ativo
+# ROTA: Editar Ativo (com atualização completa)
 # ======================================
 @app.route('/ativos/editar/<int:id>', methods=['POST'])
 @login_required
@@ -615,27 +618,45 @@ def editar_ativo(id):
             flash(f"❌ Ativo ID {id} não encontrado.", 'danger')
             return redirect(url_for('ativos'))
 
-        data = request.form.to_dict()
-        ativo.brand = data.get('brand', ativo.brand)
-        ativo.model = data.get('model', ativo.model)
-        ativo.status = data.get('status', ativo.status)
-        ativo.notes = data.get('notes', ativo.notes)
+        data = request.form
 
-        if data.get('cost_center_id') and data['cost_center_id'].isdigit():
-            ativo.cost_center_id = int(data['cost_center_id'])
-        if data.get('device_user_id') and data['device_user_id'].isdigit():
-            ativo.device_user_id = int(data['device_user_id'])
-        if data.get('type_id') and data['type_id'].isdigit():
-            ativo.type_id = int(data['type_id'])
+        # Campos simples
+        ativo.brand = data.get('brand')
+        ativo.model = data.get('model')
+        ativo.serial_number = data.get('serial_number')
+        ativo.hostname = data.get('hostname')
+        ativo.invoice_number = data.get('invoice_number')
+        ativo.patrimony_code = data.get('patrimony_code')
+        ativo.status = data.get('status')
+        ativo.ownership = data.get('ownership')
+        ativo.location = data.get('location')
+        ativo.notes = data.get('notes')
+
+        # Campos relacionais (FKs)
+        ativo.cost_center_id = int(data.get('cost_center_id')) if data.get('cost_center_id') else None
+        ativo.device_user_id = int(data.get('device_user_id')) if data.get('device_user_id') else None
+        ativo.type_id = int(data.get('type_id')) if data.get('type_id') else None
+
+        # Datas (com verificação)
+        if data.get('acquisition_date'):
+            ativo.acquisition_date = data.get('acquisition_date')
+        else:
+            ativo.acquisition_date = None
+
+        if data.get('return_date'):
+            ativo.return_date = data.get('return_date')
+        else:
+            ativo.return_date = None
 
         db.session.commit()
         flash("✅ Ativo atualizado com sucesso!", "success")
-        return redirect(url_for('ativos'))
+        return redirect(url_for('lista_ativos'))
 
     except Exception as e:
         db.session.rollback()
+        print(f"Erro ao editar ativo: {e}")
         flash(f"❌ Erro ao editar ativo: {e}", "danger")
-        return redirect(url_for('ativos'))
+        return redirect(url_for('lista_ativos'))
 
 
 # ======================================
@@ -669,8 +690,38 @@ def lista_ativos():
     filtro_status = request.args.get('status')
     filtro_cc = request.args.get('cc')
 
-    query = Asset.query
+    query = (
+        db.session.query(
+            Asset.id,
+            Asset.asset_type,
+            Asset.type_id,
+            Asset.brand,
+            Asset.model,
+            Asset.serial_number,
+            Asset.hostname,
+            Asset.invoice_number,
+            Asset.patrimony_code,
+            Asset.status,
+            Asset.ownership,
+            Asset.location,
+            Asset.acquisition_date,
+            Asset.return_date,
+            Asset.notes,
+            Asset.created_at,
+            Asset.updated_at,
+            Asset.cost_center_id,
+            Asset.device_user_id,
+            DeviceUser.first_name,
+            DeviceUser.last_name,
+            CostCenter.name.label('cc_nome')
+        )
+        .join(DeviceUser, Asset.device_user_id == DeviceUser.id, isouter=True)
+        .join(CostCenter, Asset.cost_center_id == CostCenter.id, isouter=True)
+        .join(AssetType, Asset.type_id == AssetType.id, isouter=True)
+        .order_by(Asset.id.desc())
+    )
 
+    
     if filtro_tipo:
         query = query.filter(Asset.asset_type == filtro_tipo)
     if filtro_status:
@@ -678,20 +729,23 @@ def lista_ativos():
     if filtro_cc and filtro_cc.isdigit():
         query = query.filter(Asset.cost_center_id == int(filtro_cc))
 
-    ativos = query.order_by(Asset.id.desc()).all()
+    ativos = query.all()
 
+    # Dicionários auxiliares para o restante da tela
     centros = {c.id: f"{c.code} - {c.name}" for c in CostCenter.query.all()}
     usuarios = {u.id: f"{u.first_name} {u.last_name}" for u in DeviceUser.query.all()}
-    tipos = {t.name: t.name for t in AssetType.query.all()}
+    tipos = AssetType.query.all()
 
-    return render_template('lista_ativos.html',
-                           ativos=ativos,
-                           centros=centros,
-                           usuarios=usuarios,
-                           tipos=tipos,
-                           filtro_tipo=filtro_tipo,
-                           filtro_status=filtro_status,
-                           filtro_cc=filtro_cc)
+    return render_template(
+        'lista_ativos.html',
+        ativos=ativos,
+        centros=centros,
+        usuarios=usuarios,
+        tipos=tipos,
+        filtro_tipo=filtro_tipo,
+        filtro_status=filtro_status,
+        filtro_cc=filtro_cc
+    )
 
 
 

@@ -1,7 +1,7 @@
 <!-- Modal Visualizar Ativo -->
 <div class="modal fade" id="viewAtivo{{ ativo.id }}" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-md">
-    <div class="modal-content bg-dark text-white border-0 shadow-lg">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content bg-dark text-white border-0 shadow-lg rounded-4">
       
       <!-- Cabeçalho -->
       <div class="modal-header border-secondary">
@@ -13,25 +13,46 @@
 
       <!-- Corpo -->
       <div class="modal-body">
-        <ul class="list-unstyled mb-0 small">
-          <li><strong>ID:</strong> {{ ativo.id }}</li>
-          <li><strong>Tipo:</strong> {{ ativo.asset_type or '—' }}</li>
-          <li><strong>Marca:</strong> {{ ativo.brand or '—' }}</li>
-          <li><strong>Modelo:</strong> {{ ativo.model or '—' }}</li>
-          <li><strong>Nº de Série:</strong> {{ ativo.serial_number or '—' }}</li>
-          <li><strong>Status:</strong> {{ ativo.status or '—' }}</li>
-          <li><strong>Usuário Vinculado:</strong> {{ ativo.first_name }} {{ ativo.last_name }}</li>
-          <li><strong>Centro de Custo:</strong> {{ ativo.cc_nome or '—' }}</li>
-          <li><strong>Localização:</strong> {{ ativo.location or '—' }}</li>
-          <li><strong>Propriedade:</strong> {{ ativo.ownership or '—' }}</li>
-          <li><strong>Data de Aquisição:</strong> 
-            {{ ativo.acquisition_date.strftime('%d/%m/%Y') if ativo.acquisition_date else '—' }}
-          </li>
-          <li><strong>Data de Devolução:</strong> 
-            {{ ativo.return_date.strftime('%d/%m/%Y') if ativo.return_date else '—' }}
-          </li>
-          <li><strong>Observações:</strong> {{ ativo.notes or 'Sem observações.' }}</li>
-        </ul>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <p><strong>ID:</strong> {{ ativo.id }}</p>
+            <p><strong>Tipo:</strong> {{ ativo.asset_type or '—' }}</p>
+            <p><strong>Marca:</strong> {{ ativo.brand or '—' }}</p>
+            <p><strong>Modelo:</strong> {{ ativo.model or '—' }}</p>
+            <p><strong>Nº de Série:</strong> {{ ativo.serial_number or '—' }}</p>
+            <p><strong>Hostname:</strong> {{ ativo.hostname or '—' }}</p>
+            <p><strong>Status:</strong> {{ ativo.status or '—' }}</p>
+            <p><strong>Propriedade:</strong> {{ ativo.ownership or '—' }}</p>
+          </div>
+
+          <div class="col-md-6">
+            <p><strong>Nota Fiscal:</strong> {{ ativo.invoice_number or '—' }}</p>
+            <p><strong>Código Patrimônio:</strong> {{ ativo.patrimony_code or '—' }}</p>
+            <p><strong>Centro de Custo:</strong> {{ ativo.cc_nome or '—' }}</p>
+            <p><strong>Usuário Vinculado:</strong> {{ ativo.first_name }} {{ ativo.last_name }}</p>
+            <p><strong>Localização:</strong> {{ ativo.location or '—' }}</p>
+            <p><strong>Data de Aquisição:</strong>
+              {{ ativo.acquisition_date.strftime('%d/%m/%Y') if ativo.acquisition_date else '—' }}
+            </p>
+            <p><strong>Data de Devolução:</strong>
+              {{ ativo.return_date.strftime('%d/%m/%Y') if ativo.return_date else '—' }}
+            </p>
+          </div>
+
+          <div class="col-12">
+            <p><strong>Observações:</strong></p>
+            <div class="bg-black bg-opacity-50 border border-secondary rounded p-2" style="min-height: 60px;">
+              {{ ativo.notes or 'Sem observações.' }}
+            </div>
+          </div>
+
+          <div class="col-12">
+            <p class="text-secondary small mb-0">
+              <strong>Criado em:</strong> {{ ativo.created_at.strftime('%d/%m/%Y %H:%M') if ativo.created_at else '—' }} <br>
+              <strong>Última atualização:</strong> {{ ativo.updated_at.strftime('%d/%m/%Y %H:%M') if ativo.updated_at else '—' }}
+            </p>
+          </div>
+        </div>
       </div>
 
       <!-- Rodapé -->
