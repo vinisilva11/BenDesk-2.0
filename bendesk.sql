@@ -66,33 +66,6 @@ CREATE TABLE ticket_attachments (
     FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
 );
 
--- ERRO --
-CREATE TABLE assets (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    asset_type VARCHAR(100) NOT NULL,
-    type_id INT,
-    brand VARCHAR(100),
-    model VARCHAR(100),
-    serial_number VARCHAR(100) UNIQUE,
-    hostname VARCHAR(100),
-    invoice_number VARCHAR(100),
-    patrimony_code VARCHAR(100),
-    status VARCHAR(50),
-    ownership VARCHAR(50),
-    location VARCHAR(100),
-    cost_center_id INT,
-    device_user_id INT,
-    acquisition_date DATE,
-    return_date DATE,
-    notes TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (type_id) REFERENCES asset_types(id),
-    FOREIGN KEY (cost_center_id) REFERENCES cost_centers(id),
-    FOREIGN KEY (device_user_id) REFERENCES device_users(id)
-);
-
-
 CREATE TABLE cost_centers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(20),
@@ -131,6 +104,31 @@ CREATE TABLE estoque_movimentacoes (
     usuario VARCHAR(100),
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (item_id) REFERENCES estoque_itens(id) ON DELETE CASCADE
+);
+
+CREATE TABLE assets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    asset_type VARCHAR(100) NOT NULL,
+    type_id INT,
+    brand VARCHAR(100),
+    model VARCHAR(100),
+    serial_number VARCHAR(100) UNIQUE,
+    hostname VARCHAR(100),
+    invoice_number VARCHAR(100),
+    patrimony_code VARCHAR(100),
+    status VARCHAR(50),
+    ownership VARCHAR(50),
+    location VARCHAR(100),
+    cost_center_id INT,
+    device_user_id INT,
+    acquisition_date DATE,
+    return_date DATE,
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (type_id) REFERENCES asset_types(id),
+    FOREIGN KEY (cost_center_id) REFERENCES cost_centers(id),
+    FOREIGN KEY (device_user_id) REFERENCES device_users(id)
 );
 
 ALTER TABLE cost_centers 

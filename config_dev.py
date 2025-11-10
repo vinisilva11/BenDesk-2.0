@@ -3,7 +3,7 @@ import os
 from urllib.parse import quote_plus
 
 class Config:
-    # 🔐 Chave secreta para sessões Flask
+    # Chave secreta para sessões Flask
     SECRET_KEY = "dev_secret_key"
 
     # 🗄️ Configuração do banco de dados MySQL (via PyMySQL)
