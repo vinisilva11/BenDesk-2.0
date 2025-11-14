@@ -6,6 +6,9 @@ from flask import Flask
 import os
 import base64
 import re  # regex
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 # ===========================================================
 #  CONFIGURAÇÃO DO AMBIENTE
@@ -13,15 +16,31 @@ import re  # regex
 try:
     from config_dev import Config  # 🧩 Ambiente local (DEV)
 except ImportError:
-    from config import Config  # ☁️ Fallback para produção (Linux)
+    from config import Config      # ☁️ Produção (Linux)
+
+# Flag pra saber se é DEV
+IS_DEV = hasattr(Config, "USE_MSAL") and Config.USE_MSAL is False
+
+# Flask app só pra usar o db (quando rodar esse arquivo isolado)
+app = Flask(__name__)
+app.config.from_object(Config)
+db.init_app(app)
+
+# SMTP (Microsoft 365 / Outlook)
+SMTP_USER = Config.SMTP_USER
+SMTP_PASSWORD = Config.SMTP_PASSWORD
+SMTP_SERVER = Config.SMTP_SERVER
+SMTP_PORT = Config.SMTP_PORT
+
+UPLOAD_FOLDER = 'uploads'
+
 
 # ===========================================================
-#  MODO DEV: DESATIVA INTEGRAÇÕES EXTERNAS
+#  MODO DEV — TUDO “FAKE”
 # ===========================================================
-if hasattr(Config, "USE_MSAL") and Config.USE_MSAL is False:
-    print("🧩 Rodando em modo DEV - MSAL e SMTP desativados.")
+if IS_DEV:
+    print("🧩 Rodando em modo DEV — MSAL e SMTP desativados.")
 
-    # Funções "fake" para o ambiente local --------------------
     def get_access_token():
         print("🔒 [DEV] MSAL desativado.")
         return None
@@ -46,24 +65,10 @@ if hasattr(Config, "USE_MSAL") and Config.USE_MSAL is False:
         print("🚫 [DEV] Processamento de e-mails desativado.")
 
 # ===========================================================
-#  MODO PRODUÇÃO: TUDO ATIVO (MSAL, SMTP, ETC)
+#  MODO PRODUÇÃO — TUDO ATIVO
 # ===========================================================
 else:
     from msal import ConfidentialClientApplication
-    import smtplib
-    from email.mime.multipart import MIMEMultipart
-    from email.mime.text import MIMEText
-
-    # Configuração SMTP (Microsoft 365 / Outlook)
-    SMTP_USER = Config.SMTP_USER
-    SMTP_PASSWORD = Config.SMTP_PASSWORD
-    SMTP_SERVER = Config.SMTP_SERVER
-    SMTP_PORT = Config.SMTP_PORT
-
-    # Config Flask app (para usar o SQLAlchemy)
-    app = Flask(__name__)
-    app.config.from_object(Config)
-    db.init_app(app)
 
     # Microsoft Graph API setup
     TENANT_ID = '2ba5c794-0c81-4937-b0bb-756c39ad2499'
@@ -75,6 +80,9 @@ else:
     SCOPE = ['https://graph.microsoft.com/.default']
     GRAPH_ENDPOINT = 'https://graph.microsoft.com/v1.0'
 
+    # -----------------------------
+    #  TOKEN MSAL
+    # -----------------------------
     def get_access_token():
         app_auth = ConfidentialClientApplication(
             CLIENT_ID,
@@ -84,6 +92,9 @@ else:
         token_response = app_auth.acquire_token_for_client(scopes=SCOPE)
         return token_response.get('access_token')
 
+    # -----------------------------
+    #  BUSCAR EMAILS NÃO LIDOS
+    # -----------------------------
     def fetch_unread_emails(access_token):
         headers = {'Authorization': f'Bearer {access_token}'}
         url = f'{GRAPH_ENDPOINT}/users/{USER_EMAIL}/mailFolders/Inbox/messages?$filter=isRead eq false'
@@ -94,8 +105,14 @@ else:
             print(f"Erro ao buscar e-mails: {response.status_code} - {response.text}")
             return []
 
-    def clean_email_body(body):
-        """Remove assinaturas e conteúdo redundante."""
+    # -----------------------------
+    #  LIMPAR CORPO DO EMAIL
+    # -----------------------------
+    def clean_email_body(body: str) -> str:
+        """Remove assinatura, rodapé e texto repetido."""
+        if not body:
+            return ""
+
         if '--- Responda acima desta linha ---' in body:
             body = body.split('--- Responda acima desta linha ---')[0].strip()
 
@@ -108,6 +125,9 @@ else:
             body = re.sub(pattern, '', body, flags=re.IGNORECASE | re.DOTALL).strip()
         return body
 
+    # -----------------------------
+    #  CRIAR TICKET OU COMENTÁRIO
+    # -----------------------------
     def create_ticket_or_comment_from_email(email):
         subject = email.get('subject', 'Sem Assunto')
         body = email.get('body', {}).get('content', '').strip()
@@ -125,6 +145,7 @@ else:
         ticket_match = re.search(r'\[#(\d+)\]', subject)
 
         with app.app_context():
+            # Se assunto tem [#ID], vira comentário do ticket
             if ticket_match:
                 ticket_id = int(ticket_match.group(1))
                 ticket = Ticket.query.filter_by(id=ticket_id).first()
@@ -145,6 +166,7 @@ else:
                     db.session.commit()
                     return
 
+                # Se não achou ticket mas o assunto tem ID, ignora criar novo
                 recent_ticket = Ticket.query.filter(
                     Ticket.requester_email == sender_email,
                     Ticket.title == subject,
@@ -153,7 +175,7 @@ else:
 
                 if recent_ticket:
                     print(f"⚠️ Ticket duplicado detectado — ignorando criação: {subject}")
-                return        
+                return
 
             # 🚨 Cria novo ticket se não houver match
             new_ticket = Ticket(
@@ -169,36 +191,38 @@ else:
             db.session.add(new_ticket)
             db.session.commit()
 
-            # 🔕 DESATIVADO: Evita envio de e-mail automático ao criar chamado
             print(f"📥 Novo ticket criado automaticamente a partir de {sender_email}, sem envio de confirmação.")
 
             # Salva anexos normalmente
             save_attachments(email['id'], new_ticket.id, get_access_token())
 
+    # =======================================================
+    #  ENVIO DE EMAIL — CONFIRMAÇÃO
+    # =======================================================
     def send_confirmation_email(ticket, recipient_email, recipient_name):
         subject = f"Chamado Recebido - Ticket [#{ticket.id}]"
-        body = f"""
-Olá {recipient_name or recipient_email},
+        body_html = f"""
+<p>Olá <b>{recipient_name or recipient_email}</b>,</p>
 
-**E-mail automático, por favor NÃO responder**
+<p>Recebemos sua solicitação com sucesso.</p>
 
-Recebemos sua solicitação com sucesso.
+<p>
+✅ Número do ticket: <b>[#{ticket.id}]</b><br>
+📝 Título: <b>{ticket.title}</b>
+</p>
 
-✅ Número do ticket: [#{ticket.id}]
-📝 Título: {ticket.title}
+<p>Em breve, nossa equipe entrará em contato.</p>
 
-Em breve, nossa equipe entrará em contato.
-
---- Responda acima desta linha ---
-
-Atenciosamente,
-Equipe de TI - Synerjet
+<p style="color:#777;font-size:12px;">
+E-mail automático, por favor NÃO responder.
+</p>
 """
-        msg = MIMEMultipart()
+
+        msg = MIMEMultipart("alternative")
         msg['From'] = SMTP_USER
         msg['To'] = recipient_email
         msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
+        msg.attach(MIMEText(body_html, 'html', 'utf-8'))
 
         try:
             with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
@@ -209,41 +233,42 @@ Equipe de TI - Synerjet
         except Exception as e:
             print(f"Erro ao enviar confirmação: {e}")
 
-    def send_update_email(ticket, recipient_email, recipient_name, subject_extra, body_message):
+    # =======================================================
+    #  ENVIO DE EMAIL — ATUALIZAÇÃO / ENCERRAMENTO
+    # =======================================================
+    def send_update_email(ticket, recipient_email, recipient_name, subject_extra, body_html, body_text=None):
+        """
+        Envia e-mail multipart (texto + HTML) compatível com Outlook.
+        Assinatura bate com o que você usa no app.py:
+        send_update_email(ticket, email, nome, subject_extra, body_html, body_text)
+        """
         subject = f"[Atualização Ticket [#{ticket.id}]] {ticket.title} - {subject_extra}"
-        body = f"""
-Olá {recipient_name or recipient_email},
 
-Seu ticket foi atualizado.
+        msg = MIMEMultipart("alternative")
+        msg['From'] = SMTP_USER
+        msg['To'] = recipient_email
+        msg['Subject'] = subject
 
-✅ Número do ticket: [#{ticket.id}]
-📝 Título: {ticket.title}
+        # Texto simples (fallback) – se você mandar body_text no app.py, ele entra aqui
+        if body_text:
+            msg.attach(MIMEText(body_text, "plain", "utf-8"))
 
-{body_message}
+        # HTML bonito vindo pronto do app.py
+        msg.attach(MIMEText(body_html, "html", "utf-8"))
 
---- Responda acima desta linha ---
-
-Para mais detalhes, entre em contato conosco.
-
-Atenciosamente,
-Equipe de TI - Synerjet
-"""
         try:
-            msg = MIMEMultipart()
-            msg['From'] = SMTP_USER
-            msg['To'] = recipient_email
-            msg['Subject'] = subject
-            msg.attach(MIMEText(body, 'plain'))
-
             with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
                 server.starttls()
                 server.login(SMTP_USER, SMTP_PASSWORD)
                 server.sendmail(SMTP_USER, recipient_email, msg.as_string())
 
-            print(f"E-mail de atualização enviado para {recipient_email}")
+            print(f"📨 E-mail de atualização enviado para {recipient_email}")
         except Exception as e:
-            print(f"Erro ao enviar atualização: {e}")
+            print(f"❌ Erro ao enviar atualização: {e}")
 
+    # =======================================================
+    #  MARCAR E-MAIL COMO LIDO
+    # =======================================================
     def mark_email_as_read(email_id, access_token):
         headers = {
             'Authorization': f'Bearer {access_token}',
@@ -257,17 +282,21 @@ Equipe de TI - Synerjet
         else:
             print(f"Erro ao marcar como lido: {response.status_code} - {response.text}")
 
+    # =======================================================
+    #  PROCESSAR E-MAILS
+    # =======================================================
     def process_emails():
         token = get_access_token()
         emails = fetch_unread_emails(token)
         print(f"Encontrados {len(emails)} e-mails não lidos.")
         for email in emails:
-            # ✅ Marca o e-mail como lido primeiro, para evitar duplicação
+            # Marca como lido primeiro
             mark_email_as_read(email['id'], token)
             create_ticket_or_comment_from_email(email)
 
-    UPLOAD_FOLDER = 'uploads'
-
+    # =======================================================
+    #  SALVAR ANEXOS
+    # =======================================================
     def save_attachments(email_id, ticket_id, access_token):
         headers = {'Authorization': f'Bearer {access_token}'}
         attachments_url = f"{GRAPH_ENDPOINT}/users/{USER_EMAIL}/messages/{email_id}/attachments"
@@ -293,11 +322,12 @@ Equipe de TI - Synerjet
         else:
             print(f"Erro ao buscar anexos: {response.status_code} - {response.text}")
 
+
 # ===========================================================
-#  EXECUÇÃO CONDICIONAL
+#  EXECUÇÃO DIRETA (rodar processamento de e-mails)
 # ===========================================================
 if __name__ == '__main__':
-    if hasattr(Config, "USE_MSAL") and Config.USE_MSAL is False:
+    if IS_DEV:
         print("🚫 MSAL e processamento de e-mails desativados no ambiente DEV.")
     else:
         process_emails()

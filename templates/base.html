@@ -222,6 +222,9 @@
       <a href="{{ url_for('tipos_dispositivo') }}" class="nav-link {% if request.endpoint == 'tipos_dispositivo' %}active{% endif %}">
         <i data-lucide="layers"></i> <span>Tipos de Dispositivo</span>
       </a>
+      <a href="{{ url_for('relatorio_avaliacoes') }}" class="nav-link {% if request.endpoint == 'relatorio_avaliacoes' %}active{% endif %}">
+        <i data-lucide="star"></i> <span>Avaliações</span>
+      </a>
       <hr class="text-secondary mx-3">
       <a href="{{ url_for('logout') }}" class="nav-link text-danger">
         <i data-lucide="log-out"></i> <span>Sair</span>

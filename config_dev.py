@@ -19,8 +19,8 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # 📧 Configurações de e-mail e MSAL (mantidas off em modo dev)
-    USE_MSAL = False
-    MAIL_ENABLED = False
+    USE_MSAL = True
+    MAIL_ENABLED = True
 
     # 📨 SMTP (mantém se quiser testar envio local)
     SMTP_USER = "suporteti@synerjet.com"

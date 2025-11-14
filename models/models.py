@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime
 import pytz
+from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
@@ -9,12 +10,25 @@ class User(db.Model, UserMixin):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(50), nullable=False)
+    
+    # Aumentei o tamanho para comportar o hash PBKDF2 do Werkzeug
+    password = db.Column(db.String(255), nullable=False)
+
     profile = db.Column(db.String(20), nullable=False)
     first_name = db.Column(db.String(50))
     last_name = db.Column(db.String(50))
     is_active = db.Column(db.Boolean, default=True)
     email = db.Column(db.String(100), nullable=True)
+
+
+    def set_password(self, raw_password):
+        """Gera o hash seguro (PBKDF2-SHA256)."""
+        self.password = generate_password_hash(raw_password)
+
+    def check_password(self, raw_password):
+        """Valida a senha comparando com o hash."""
+        return check_password_hash(self.password, raw_password)
+    
 
 class Ticket(db.Model):
     __tablename__ = 'tickets'
@@ -141,3 +155,14 @@ class EstoqueMovimentacao(db.Model):
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone('America/Sao_Paulo')))
 
 # Final do codigo para Class dos estoques•µ   
+
+class TicketFeedback(db.Model):
+    __tablename__ = 'ticket_feedback'
+
+    id = db.Column(db.Integer, primary_key=True)
+    ticket_id = db.Column(db.Integer, db.ForeignKey('tickets.id'), nullable=False)
+    rating = db.Column(db.Integer)  # número de estrelas (1 a 5)
+    token = db.Column(db.String(100), unique=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone('America/Sao_Paulo')))
+
+    ticket = db.relationship('Ticket', backref='feedback')

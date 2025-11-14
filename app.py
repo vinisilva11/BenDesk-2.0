@@ -15,6 +15,8 @@ from routes.routes_ativos import bp_ativos
 import os
 
 
+
+
 # ==============================================================
 # 📨 PROCESSAMENTO AUTOMÁTICO DE E-MAILS (MS Graph Listener)
 # ==============================================================
@@ -125,16 +127,24 @@ def index():
     )
 
 
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        user = User.query.filter_by(username=request.form['username']).first()
-        if user and user.password == request.form['password']:
-            login_user(user)
-            return redirect(url_for('index'))
-        flash('Usuário ou senha inválidos')
+        username = request.form.get('username')
+        raw_password = request.form.get('password')
+
+        user = User.query.filter_by(username=username).first()
+
+        # Segurança de verdade: senha com hash
+        if not user or not user.check_password(raw_password):
+            flash('Usuário ou senha inválidos', 'danger')
+            return render_template('login.html')
+
+        login_user(user)
+        return redirect(url_for('index'))
+
     return render_template('login.html')
+
 
 @app.route('/logout')
 @login_required
@@ -220,36 +230,95 @@ def new_ticket():
     return render_template('new_ticket.html')
 
 
+def render_email_html(title, user_name, message_html, extra_info_html=""):
+    logo_url = url_for('static', filename='Logo_BenDesk.png', _external=True)
+
+    return f"""
+<table width="100%" cellpadding="0" cellspacing="0" 
+       style="background:#f4f6f9;padding:30px 0;font-family:Arial;">
+  <tr>
+    <td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" 
+             style="background:#fff;border:1px solid #ddd;border-radius:8px;">
+
+        <!-- TOP -->
+        <tr>
+          <td align="center" bgcolor="#002b55" style="padding:20px;">
+            <img src="{logo_url}" width="140" style="margin-bottom:10px;">
+            <h2 style="color:#f1c232;margin:0;font-size:20px">{title}</h2>
+          </td>
+        </tr>
+
+        <!-- BODY -->
+        <tr>
+          <td style="padding:30px;color:#333;">
+            <p style="font-size:16px;">Olá <b>{user_name}</b>,</p>
+
+            <div style="font-size:15px;line-height:22px;">
+              {message_html}
+            </div>
+
+            {extra_info_html}
+          </td>
+        </tr>
+
+        <!-- FOOTER -->
+        <tr>
+          <td align="center" bgcolor="#002b55"
+              style="color:#fff;padding:15px;font-size:12px;">
+            Equipe de TI – Synerjet<br>
+            <span style="color:#ccc;">Não responda este e-mail.</span>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+"""
+
+
 @app.route('/ticket/<int:ticket_id>', methods=['GET', 'POST'])
 @login_required
 def view_ticket(ticket_id):
-    users = User.query.filter(User.is_active == True, User.profile.in_(['Administrador', 'Suporte'])).all()
+    users = User.query.filter(
+        User.is_active == True,
+        User.profile.in_(['Administrador', 'Suporte'])
+    ).all()
+
     ticket = Ticket.query.get_or_404(ticket_id)
-    history = TicketHistory.query.filter_by(ticket_id=ticket.id).order_by(TicketHistory.changed_at.desc()).all()
-    comments = TicketComment.query.filter_by(ticket_id=ticket.id).order_by(TicketComment.commented_at.desc()).all()
+    history = TicketHistory.query.filter_by(ticket_id=ticket.id)\
+        .order_by(TicketHistory.changed_at.desc()).all()
+    comments = TicketComment.query.filter_by(ticket_id=ticket.id)\
+        .order_by(TicketComment.commented_at.desc()).all()
     attachments = TicketAttachment.query.filter_by(ticket_id=ticket.id).all()
 
+    # ==========================================================
+    #  ATUALIZAÇÃO DO TICKET
+    # ==========================================================
     if request.method == 'POST':
+
         # Upload de arquivo
         if 'file' in request.files and request.files['file'].filename != '':
             file = request.files['file']
-            if file:
-                filename = secure_filename(file.filename)
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(filepath)
-                db.session.add(TicketAttachment(
-                    ticket_id=ticket.id,
-                    filename=filename,
-                    filepath=filepath
-                ))
-                db.session.commit()
-                flash('📎 Arquivo anexado com sucesso!', 'success')
-                return redirect(url_for('view_ticket', ticket_id=ticket.id))
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
 
-        # Atualização de dados
+            db.session.add(TicketAttachment(
+                ticket_id=ticket.id,
+                filename=filename,
+                filepath=filepath
+            ))
+            db.session.commit()
+
+            flash("📎 Arquivo anexado!", "success")
+            return redirect(url_for('view_ticket', ticket_id=ticket.id))
+
+        # =============== VERIFICA MUDANÇAS ===============
         old_status = ticket.status
         old_priority = ticket.priority
-        old_assigned = ticket.assigned_to or 'Não atribuído'
+        old_assigned = ticket.assigned_to or "Não atribuído"
 
         new_status = request.form.get('status')
         new_priority = request.form.get('priority')
@@ -257,13 +326,16 @@ def view_ticket(ticket_id):
         comment_text = request.form.get('comment')
 
         changes = []
+
         if old_status != new_status:
             changes.append(f"Status: '{old_status}' ➔ '{new_status}'")
             ticket.status = new_status
+
         if old_priority != new_priority:
             changes.append(f"Prioridade: '{old_priority}' ➔ '{new_priority}'")
             ticket.priority = new_priority
-        if (ticket.assigned_to or '') != (new_assigned or ''):
+
+        if (ticket.assigned_to or "") != (new_assigned or ""):
             changes.append(f"Responsável: '{old_assigned}' ➔ '{new_assigned or 'Não atribuído'}'")
             ticket.assigned_to = new_assigned if new_assigned else None
 
@@ -285,40 +357,157 @@ def view_ticket(ticket_id):
 
         db.session.commit()
 
-        # 🔹 Envio de e-mail e mensagens
-        if (changes or comment_added) and new_status != 'Cancelado':
-            body_msg = ""
-            if changes:
-                body_msg += "🔄 Alterações:\n" + "\n".join(changes)
-            if comment_added:
-                body_msg += f"\n\n💬 Comentário:\n\"{comment_text.strip()}\""
+        # ==========================================================
+        #  ENVIO DE EMAIL — PADRÃO BENDesk
+        # ==========================================================
 
-            send_update_email(
-                ticket,
-                ticket.requester_email,
-                ticket.requester_name,
-                "Ticket Atualizado",
-                body_msg
-            )
+        # ----------------------------------------------------------
+        # Função interna para montar o HTML corporativo
+        # ----------------------------------------------------------
+        def build_email_html(title, message, extra_html=""):
+            logo_url = url_for("static", filename="Logo_BenDesk.png", _external=True)
 
-            # ✅ Mensagens personalizadas conforme status
-            if new_status in ['Encerrado', 'Concluído', 'Fechado']:
-                flash('✅ Ticket concluído com sucesso!', 'success')
+            return f"""
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:30px 0;font-family:Arial;">
+ <tr>
+  <td align="center">
+   <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border:1px solid #ddd;border-radius:8px;overflow:hidden;">
+    
+    <tr>
+     <td align="center" bgcolor="#002b55" style="padding:20px;">
+      <img src="{logo_url}" width="140" style="margin-bottom:10px;">
+      <h2 style="color:#f1c232;margin:0;font-size:20px">{title}</h2>
+     </td>
+    </tr>
+
+    <tr>
+     <td style="padding:30px;color:#333;">
+        {message}
+
+        {extra_html}
+
+     </td>
+    </tr>
+
+    <tr>
+     <td align="center" bgcolor="#002b55" style="color:#fff;padding:15px;font-size:12px;">
+      Equipe de TI – Synerjet<br>
+      <span style="color:#ccc;">Este é um e-mail automático. Não responda.</span>
+     </td>
+    </tr>
+
+   </table>
+  </td>
+ </tr>
+</table>
+"""
+
+        # ==========================================================
+        #  SE FOI ENCERRADO → ENVIAR AVALIAÇÃO
+        # ==========================================================
+        if (changes or comment_added) and new_status != "Cancelado":
+
+            if new_status in ["Encerrado", "Concluído", "Fechado"]:
+                from models.models import TicketFeedback
+                import secrets
+
+                token = secrets.token_urlsafe(16)
+                fb = TicketFeedback(ticket_id=ticket.id, token=token)
+                db.session.add(fb)
+                db.session.commit()
+
+                base_url = request.host_url.rstrip("/")
+
+                msg_html = f"""
+                <p style="font-size:16px">Olá <b>{ticket.requester_name}</b>,</p>
+                <p>Seu ticket <b>#{ticket.id}</b> foi encerrado. Por favor, avalie o atendimento:</p>
+
+                <p style="text-align:center;font-size:18px;margin:30px 0;">
+                   <a href="{base_url}/avaliar_email/{token}/1">⭐ Ruim</a> &nbsp;
+                   <a href="{base_url}/avaliar_email/{token}/2">⭐⭐ Regular</a> &nbsp;
+                   <a href="{base_url}/avaliar_email/{token}/3">⭐⭐⭐ Bom</a> &nbsp;
+                   <a href="{base_url}/avaliar_email/{token}/4">⭐⭐⭐⭐ Ótimo</a> &nbsp;
+                   <a href="{base_url}/avaliar_email/{token}/5">⭐⭐⭐⭐⭐ Excelente</a>
+                </p>
+
+                <hr>
+
+                <p><b>Título:</b> {ticket.title}</p>
+                <p><b>Status:</b> {ticket.status}</p>
+                <p><b>Prioridade:</b> {ticket.priority}</p>
+                """
+
+                body_html = build_email_html(
+                    "Atendimento Encerrado",
+                    msg_html
+                )
+
+                body_text = f"Seu ticket #{ticket.id} foi encerrado."
+
+                send_update_email(
+                    ticket,
+                    ticket.requester_email,
+                    ticket.requester_name,
+                    "Atendimento Encerrado — Avalie o Suporte",
+                    body_html,
+                    body_text
+                )
+
+                flash("⭐ Ticket encerrado e e-mail de avaliação enviado!", "success")
+
             else:
-                flash('📝 Alterações salvas e e-mail enviado!', 'success')
+                # ======================================================
+                #  EMAIL NORMAL DE ATUALIZAÇÃO — PADRONIZADO
+                # ======================================================
+
+                msg_html = f"""
+                <p style="font-size:16px">Olá <b>{ticket.requester_name}</b>,</p>
+                <p>Seu ticket <b>#{ticket.id}</b> foi atualizado.</p>
+
+                <hr>
+
+                <p><b>Título:</b> {ticket.title}</p>
+                <p><b>Status atual:</b> {ticket.status}</p>
+                <p><b>Prioridade:</b> {ticket.priority}</p>
+
+                <p style="margin-top:20px;color:#444;">
+                    Caso precise de ajuda adicional, basta responder aqui abaixo.
+                </p>
+                """
+
+                body_html = build_email_html(
+                    "Atualização no Seu Chamado",
+                    msg_html
+                )
+
+                body_text = f"Seu ticket #{ticket.id} foi atualizado."
+
+                send_update_email(
+                    ticket,
+                    ticket.requester_email,
+                    ticket.requester_name,
+                    "Ticket Atualizado",
+                    body_html,
+                    body_text
+                )
+
+                flash("📝 Alterações salvas e e-mail enviado!", "success")
+
         else:
-            flash('📝 Alterações salvas!', 'success')
+            flash("📝 Alterações salvas!", "success")
 
         return redirect(url_for('view_ticket', ticket_id=ticket.id))
 
+
     return render_template(
-        'view_ticket.html',
+        "view_ticket.html",
         ticket=ticket,
         history=history,
         comments=comments,
         attachments=attachments,
         users=users
     )
+
 
 
 @app.route('/uploads/<path:filename>')
@@ -340,6 +529,7 @@ def users():
 def new_user():
     if current_user.profile != 'Administrador':
         abort(403)
+
     if request.method == 'POST':
         first_name = request.form.get('first_name')
         last_name = request.form.get('last_name')
@@ -353,14 +543,19 @@ def new_user():
             last_name=last_name,
             username=username,
             email=email,
-            password=password,
             profile=profile,
             is_active=True
         )
+
+        # senha segura
+        new_user.set_password(password)
+
         db.session.add(new_user)
         db.session.commit()
-        flash('Usuário criado com sucesso!')
+
+        flash('Usuário criado com sucesso!', 'success')
         return redirect(url_for('users'))
+
     return render_template('new_user.html')
 
 
@@ -389,19 +584,27 @@ def delete_user(user_id):
 def edit_user(user_id):
     if current_user.profile != 'Administrador':
         abort(403)
+
     user = User.query.get_or_404(user_id)
+
     if request.method == 'POST':
         user.first_name = request.form.get('first_name')
         user.last_name = request.form.get('last_name')
         user.email = request.form.get('email')
         user.profile = request.form.get('profile')
+
         new_password = request.form.get('password')
-        if new_password:
-            user.password = new_password
+
+        # se o admin quiser trocar a senha
+        if new_password and new_password.strip():
+            user.set_password(new_password)
+
         db.session.commit()
-        flash('Usuário atualizado com sucesso!')
+        flash('Usuário atualizado com sucesso!', 'success')
         return redirect(url_for('users'))
+
     return render_template('edit_user.html', user=user)
+
 
 
 @app.route('/my_tickets')
@@ -923,6 +1126,124 @@ def inject_dashboard_data():
             closed_count=0,
             avg_resolution="N/A"
         )
+    
+
+@app.route('/avaliar_email/<token>/<int:rating>')
+def avaliar_email(token, rating):
+    from models.models import TicketFeedback
+    feedback = TicketFeedback.query.filter_by(token=token).first_or_404()
+
+    if feedback.rating is None:
+        feedback.rating = rating
+        db.session.commit()
+        return "<h2 style='font-family:sans-serif;'>✅ Obrigado! Sua avaliação foi registrada com sucesso.</h2>"
+    else:
+        return "<h2 style='font-family:sans-serif;'>Você já avaliou este atendimento. Obrigado!</h2>"
+
+# ============================
+# ⭐ RELATÓRIO DE AVALIAÇÕES » COMPLETO
+# ============================
+@app.route('/relatorios/avaliacoes')
+@login_required
+def relatorio_avaliacoes():
+    from models.models import TicketFeedback, Ticket, User
+    from sqlalchemy import extract
+
+    analista = request.args.get("analista", "todos")
+    mes = request.args.get("mes", "todos")
+    ano = request.args.get("ano", "todos")
+
+    # 🔹 Lista de analistas disponíveis
+    analistas = User.query.filter(User.profile.in_(["Suporte", "Administrador"])).all()
+
+    # 🔹 Puxar todos os feedbacks
+    query = TicketFeedback.query
+
+    # ============================
+    # 🔍 FILTRO POR ANALISTA
+    # ============================
+    if analista != "todos":
+        tickets_ids = [
+            t.id for t in Ticket.query.filter_by(assigned_to=analista)
+        ]
+        if tickets_ids:
+            query = query.filter(TicketFeedback.ticket_id.in_(tickets_ids))
+        else:
+            query = query.filter(False)  # retorna vazio
+
+    # ============================
+    # 🔍 FILTRO POR MÊS / ANO
+    # ============================
+    if mes != "todos":
+        query = query.filter(extract('month', TicketFeedback.created_at) == int(mes))
+
+    if ano != "todos":
+        query = query.filter(extract('year', TicketFeedback.created_at) == int(ano))
+
+    feedbacks = query.order_by(TicketFeedback.created_at.desc()).all()
+
+    # ============================
+    # ⭐ MÉDIA GERAL (blindado)
+    # ============================
+    valid_ratings = [f.rating for f in feedbacks if isinstance(f.rating, int)]
+    media_geral = round(sum(valid_ratings) / len(valid_ratings), 2) if valid_ratings else 0
+
+    # ============================
+    # 📊 QUANTIDADE POR NOTA (seguro)
+    # ============================
+    notas = {1:0, 2:0, 3:0, 4:0, 5:0}
+    for f in valid_ratings:
+        if f in notas:
+            notas[f] += 1
+
+    notas_list = [notas[1], notas[2], notas[3], notas[4], notas[5]]
+
+    # ============================
+    # 📈 GRÁFICO LINHA – evolução mensal
+    # ============================
+    meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"]
+    dados_mensais = [0] * 12
+
+    for f in feedbacks:
+        # created_at nunca é None, então aqui tá seguro
+        m = f.created_at.month
+        dados_mensais[m - 1] += 1
+
+    # ============================
+    # 🏆 RANKING DOS ANALISTAS
+    # ============================
+    ranking = []
+
+    for a in analistas:
+        tks = Ticket.query.filter_by(assigned_to=a.username).all()
+        ids = [t.id for t in tks]
+
+        fb = TicketFeedback.query.filter(TicketFeedback.ticket_id.in_(ids)).all()
+        fb_valid = [f.rating for f in fb if isinstance(f.rating, int)]
+
+        if fb_valid:
+            media = round(sum(fb_valid) / len(fb_valid), 2)
+            ranking.append({
+                'analista': a.username,
+                'media': media,
+                'qtd': len(fb_valid)
+            })
+
+    ranking = sorted(ranking, key=lambda x: x['media'], reverse=True)
+
+    return render_template(
+        "relatorio_avaliacoes.html",
+        feedbacks=feedbacks,
+        media_geral=media_geral,
+        notas_list=notas_list,
+        meses=meses,
+        dados_mensais=dados_mensais,
+        analistas=analistas,
+        ranking=ranking,
+        analista_selecionado=analista,
+        mes_sel=mes,
+        ano_sel=ano
+    )
 
 @app.context_processor
 def inject_datetime():

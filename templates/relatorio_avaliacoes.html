@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}Avaliações de Atendimento{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <h2 class="mb-4 fw-bold">
+        <i data-lucide="star" class="text-warning"></i> Avaliações de Atendimento
+    </h2>
+
+    <!-- =======================
+         FILTROS
+    ========================= -->
+    <form method="GET" class="mb-4">
+        <div class="row g-3">
+
+            <!-- ANALISTA -->
+            <div class="col-md-4">
+                <label class="form-label text-muted">Analista</label>
+                <select name="analista" class="form-select bg-dark text-light border-secondary">
+                    <option value="todos">Todos os Analistas</option>
+                    {% for a in analistas %}
+                        <option value="{{ a.username }}"
+                            {% if analista_selecionado == a.username %}selected{% endif %}>
+                            {{ a.username }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- MÊS -->
+            <div class="col-md-3">
+                <label class="form-label text-muted">Mês</label>
+                <select name="mes" class="form-select bg-dark text-light border-secondary">
+                    <option value="todos">Todos</option>
+                    {% for i in range(1,13) %}
+                        <option value="{{ i }}" {% if mes_sel == i|string %}selected{% endif %}>
+                            {{ meses[i-1] }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- ANO -->
+            <div class="col-md-3">
+                <label class="form-label text-muted">Ano</label>
+                <select name="ano" class="form-select bg-dark text-light border-secondary">
+                    <option value="todos">Todos</option>
+                    {% for y in range(2024, 2027) %}
+                        <option value="{{ y }}" {% if ano_sel == y|string %}selected{% endif %}>
+                            {{ y }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- BOTÃO -->
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn btn-primary w-100" type="submit">Filtrar</button>
+            </div>
+
+        </div>
+    </form>
+
+
+    <!-- =======================
+         CARDS RESUMO
+    ========================= -->
+    <div class="row g-4 mb-4">
+
+        <!-- MÉDIA GERAL -->
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm" style="background:#181b20; border:1px solid #2a2e33;">
+                <div class="card-body">
+                    <h6 class="text-muted">Média Geral</h6>
+                    <h1 class="display-4 fw-bold text-primary">{{ media_geral }}</h1>
+                    <small class="text-muted">Baseado em {{ feedbacks|length }} avaliações</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- GRÁFICO PIZZA -->
+        <div class="col-md-8">
+            <div class="card shadow-sm" style="background:#181b20; border:1px solid #2a2e33;">
+                <div class="card-body">
+                    <h6 class="text-muted mb-3">Distribuição das Notas</h6>
+                    <canvas id="graficoPizza" style="max-height: 230px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- =======================
+         GRÁFICO LINHA (EVOLUÇÃO)
+    ========================= -->
+    <div class="card shadow-sm mb-4" style="background:#181b20; border:1px solid #2a2e33;">
+        <div class="card-body">
+            <h6 class="text-muted mb-3">Evolução Mensal das Avaliações</h6>
+            <canvas id="graficoLinha"></canvas>
+        </div>
+    </div>
+
+
+    <!-- =======================
+         GRÁFICO BARRAS
+    ========================= -->
+    <div class="card shadow-sm mb-4" style="background:#181b20; border:1px solid #2a2e33;">
+        <div class="card-body">
+            <h6 class="text-muted mb-3">Quantidade de Avaliações por Nota</h6>
+            <canvas id="graficoBarras"></canvas>
+        </div>
+    </div>
+
+
+    <!-- =======================
+         RANKING DOS ANALISTAS
+    ========================= -->
+    <div class="card shadow-sm mb-4" style="background:#181b20; border:1px solid #2a2e33;">
+        <div class="card-body">
+            <h5 class="mb-3">🏆 Ranking dos Analistas</h5>
+
+            {% if ranking|length == 0 %}
+                <p class="text-muted">Nenhum analista possui avaliações ainda.</p>
+            {% else %}
+            <table class="table table-dark table-striped text-center align-middle">
+                <thead>
+                    <tr>
+                        <th>Analista</th>
+                        <th>Média</th>
+                        <th>Avaliações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in ranking %}
+                    <tr>
+                        <td>{{ r.analista }}</td>
+                        <td>{{ r.media }}</td>
+                        <td>{{ r.qtd }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+    </div>
+
+
+    <!-- =======================
+         TABELA DETALHADA
+    ========================= -->
+    <div class="card shadow-sm" style="background:#181b20; border:1px solid #2a2e33;">
+        <div class="card-body">
+            <h5 class="mb-3">Lista de Avaliações</h5>
+
+            <table class="table table-dark table-striped table-hover text-center align-middle">
+                <thead>
+                    <tr>
+                        <th>Ticket</th>
+                        <th>Nota</th>
+                        <th>Data</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if feedbacks|length == 0 %}
+                    <tr>
+                        <td colspan="3" class="text-muted py-3">Nenhuma avaliação encontrada.</td>
+                    </tr>
+                    {% else %}
+                        {% for f in feedbacks %}
+                        <tr>
+                            <td>
+                                <a href="/ticket/{{ f.ticket_id }}" class="btn btn-outline-primary btn-sm">
+                                    #{{ f.ticket_id }}
+                                </a>
+                            </td>
+
+                            <td>
+                                {% if f.rating %}
+                                    {% for i in range(f.rating) %}
+                                        ⭐
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted">Sem nota</span>
+                                {% endif %}
+                            </td>
+
+                            <td>{{ f.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+
+            </table>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- =======================
+     JS – Chart.js
+=========================== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    const notas = JSON.parse(`{{ notas_list | tojson | safe }}`);
+    const dadosMensais = JSON.parse(`{{ dados_mensais | tojson | safe }}`);
+    const labelsMeses = JSON.parse(`{{ meses | tojson | safe }}`);
+
+    const labels = ['1 ⭐', '2 ⭐⭐', '3 ⭐⭐⭐', '4 ⭐⭐⭐⭐', '5 ⭐⭐⭐⭐⭐'];
+
+    /* PIZZA */
+    new Chart(document.getElementById('graficoPizza'), {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: notas,
+                backgroundColor: ['#b94a48','#f0ad4e','#5bc0de','#0275d8','#5cb85c']
+            }]
+        }
+    });
+
+    /* BARRAS */
+    new Chart(document.getElementById('graficoBarras'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Quantidade',
+                data: notas,
+                backgroundColor: ['#b94a48','#f0ad4e','#5bc0de','#0275d8','#5cb85c']
+            }]
+        },
+        options: {
+            scales: {
+                x: { ticks:{ color:"#ddd" }},
+                y: { ticks:{ color:"#ddd" }}
+            }
+        }
+    });
+
+    /* LINHA – evolução mensal */
+    new Chart(document.getElementById('graficoLinha'), {
+        type: 'line',
+        data: {
+            labels: labelsMeses,
+            datasets: [{
+                label: "Avaliações por Mês",
+                data: dadosMensais,
+                borderColor: "#0d6efd",
+                backgroundColor: "rgba(13,110,253,0.2)",
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            scales: {
+                x: { ticks:{ color:"#ddd" }},
+                y: { ticks:{ color:"#ddd" }}
+            }
+        }
+    });
+
+});
+</script>
+
+{% endblock %}
